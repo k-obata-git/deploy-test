@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     ];
   },
   reactStrictMode: false,
-  distDir: 'dist',
+  distDir: 'build',
   devIndicators: false,
   // devIndicators: {
   //   appIsrStatus: false,

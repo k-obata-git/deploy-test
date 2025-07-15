@@ -25,16 +25,15 @@ export const authOptions = {
 
       // 入力されたIDとパスワードが正しいかチェックする関数
       async authorize(credentials) {
-        // const user = await prisma.user.findUnique({
-        //   where: { userId: credentials?.username, password: credentials?.password },
-        // });
+        const user = await prisma.user.findUnique({
+          where: { userId: credentials?.username, password: credentials?.password },
+        });
 
-        // if(user) {
-        //   return { id: user.id.toString(), userName: user.name, role: user.role };
-        // }
+        if(user) {
+          return { id: user.id.toString(), userName: user.name, role: user.role };
+        }
 
-        // return null;
-        return { id: "1", userName: "TEST", role: 0 };
+        return null;
       },
     }),
   ],

@@ -1,0 +1,91 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int        @id @default(autoincrement())
+  name      String
+  userId    String     @unique @default("")
+  email     String     @unique
+  password  String     @default("")
+  role      Int        @default(0)
+  forms     Form[]
+  responses Response[]
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime   @updatedAt @db.Timestamptz(3)
+}
+
+model Form {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  isPublic    Boolean    @default(true)
+  questions   Question[]
+  responses   Response[]
+  user        User       @relation(fields: [userId], references: [id])
+  userId      Int
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime   @updatedAt @db.Timestamptz(3)
+}
+
+model Question {
+  id        Int          @id @default(autoincrement())
+  label     String
+  type      QuestionType
+  position  Int
+  form      Form         @relation(fields: [formId], references: [id], onDelete: Cascade)
+  formId    Int
+  options   Option[]
+  answers   Answer[]
+  createdAt DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime     @updatedAt @db.Timestamptz(3)
+}
+
+model Option {
+  id         Int      @id @default(autoincrement())
+  text       String
+  position   Int
+  isDeleted  Boolean  @default(false)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId Int
+  answers    Answer[]
+}
+
+model Response {
+  id          Int      @id @default(autoincrement())
+  form        Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  formId      Int
+  user        User?    @relation(fields: [userId], references: [id])
+  userId      Int?
+  answers     Answer[]
+  submittedAt DateTime @default(now()) @db.Timestamptz(3)
+}
+
+model Answer {
+  id         Int      @id @default(autoincrement())
+  response   Response @relation(fields: [responseId], references: [id], onDelete: Cascade)
+  responseId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  questionId Int
+  option     Option?  @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  optionId   Int?
+  text       String? // テキスト回答
+}
+
+enum QuestionType {
+  text
+  radio
+  checkbox
+}

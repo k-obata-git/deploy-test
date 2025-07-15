@@ -11,7 +11,7 @@ type QuestionSummary =
       id: number;
       label: string;
       type: 'text';
-      texts: string[];
+      texts: string[] | undefined;
     }
   | {
       id: number;
@@ -41,10 +41,10 @@ export default function FormResultsPage() {
     return <Loading />
   }
 
-  const totalResponses = form.responses.length;
+  const totalResponses = form.responses?.length;
 
   const questionSummaries: QuestionSummary[] = form.questions.map((q) => {
-    const answers = form.responses.flatMap((r) =>
+    const answers = form.responses?.flatMap((r) =>
       r.answers.filter((a) => a.questionId === q.id)
     );
 
@@ -53,7 +53,7 @@ export default function FormResultsPage() {
         id: q.id,
         label: q.label,
         type: 'text' as const,
-        texts: answers.map((a) => a.text),
+        texts: answers?.map((a) => a.text),
       };
     }
 
@@ -63,7 +63,7 @@ export default function FormResultsPage() {
         counts[opt.text] = 0;
       });
 
-      for (const a of answers) {
+      for (const a of answers!) {
         if (counts[a.text] !== undefined) {
           counts[a.text]++;
         }
@@ -85,7 +85,7 @@ export default function FormResultsPage() {
     };
   });
 
-  if(form.responses.length === 0) {
+  if(form.responses?.length === 0) {
     return (
       <Container>
         <h5 className="mb-4 text-truncate">{form.title}</h5>
@@ -109,9 +109,9 @@ export default function FormResultsPage() {
 
                 {q.type === 'text' && (
                   <>
-                    {q.texts.length === 0 && <p className="text-muted">回答なし</p>}
+                    {q.texts?.length === 0 && <p className="text-muted">回答なし</p>}
                     <ul>
-                      {q.texts.map((t, idx) => (
+                      {q.texts?.map((t, idx) => (
                         <li key={idx}>{t}</li>
                       ))}
                     </ul>
@@ -122,7 +122,7 @@ export default function FormResultsPage() {
                   <div>
                     {Object.entries(q.counts).map(([optionText, count]) => {
                       const percent =
-                        totalResponses === 0 ? 0 : Math.round((count / totalResponses) * 100);
+                        totalResponses === 0 ? 0 : Math.round((count / totalResponses!) * 100);
                       return (
                         <div key={optionText} className="mb-2">
                           <div className="d-flex justify-content-between">
@@ -142,7 +142,7 @@ export default function FormResultsPage() {
 
         <Tab eventKey="responses" title="個別回答">
           {
-            form.responses.map((response, rIndex) => (
+            form.responses?.map((response, rIndex) => (
               <Card key={response.id} className="mb-4">
                 <Card.Header>
                   <div className="d-flex gap-2">

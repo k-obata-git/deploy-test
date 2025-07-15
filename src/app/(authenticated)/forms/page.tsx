@@ -62,7 +62,7 @@ export default function FormListPage() {
                   <Card.Title className="text-truncate">{form.title}</Card.Title>
                   <Card.Text className="text-truncate">{form.description ?? "-"}</Card.Text>
                   <Card.Text className="text-muted mb-2" style={{ fontSize: '0.9rem' }}>作成日: {new Date(form.createdAt).toLocaleDateString()}</Card.Text>
-                  <Card.Text className="text-muted" style={{ fontSize: '0.9rem' }}>回答数: {form.responses.length}件</Card.Text>
+                  <Card.Text className="text-muted" style={{ fontSize: '0.9rem' }}>回答数: {form.responses?.length}件</Card.Text>
                   <div className="d-flex gap-2">
                     <div className="flex-grow-1">
                       <Button size="sm" variant="outline-danger" onClick={() => { setSelectedForm(form), setShowModal(true) }}>削除</Button>

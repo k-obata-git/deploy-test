@@ -1,5 +1,12 @@
 import type { NextConfig } from "next";
 
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development', // dev中は無効に
+});
+
 const nextConfig: NextConfig = {
   async redirects() {
     return [
@@ -14,7 +21,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  reactStrictMode: false,
+  reactStrictMode: true,
   distDir: 'build',
   devIndicators: false,
   // devIndicators: {
@@ -24,4 +31,6 @@ const nextConfig: NextConfig = {
   // },
 };
 
-export default nextConfig;
+// export default nextConfig;
+
+module.exports = withPWA(nextConfig);

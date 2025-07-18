@@ -44,6 +44,9 @@ export async function POST(req: Request) {
       where: {
         id: Number(id)
       },
+      include: {
+        questions: true
+      },
       data: {
         title,
         description,
@@ -60,11 +63,18 @@ export async function POST(req: Request) {
       }
      });
 
-    // 既存の質問を物理削除（簡易な差分更新でなく全削除 → 再作成）
-    // await prisma.question.deleteMany({ where: { formId: Number(id) } });
-
     // 質問・選択肢を登録
-    await insertQuestionAndOption(updatedForm.id, questions);
+    const newQuestions = await insertQuestionAndOption(updatedForm.id, questions);
+
+    // 削除された質問を物理削除
+    for (let i = 0; i < updatedForm.questions.length; i++) {
+      const oldId = updatedForm.questions[i].id;
+      if(!newQuestions.some(nq => nq.id === oldId)) {
+        await prisma.question.delete({
+          where: { id: oldId },
+        });
+      }
+    }
 
     // 再取得して返す
     return NextResponse.json(await getFormRecord(updatedForm.id));
@@ -104,6 +114,7 @@ async function getFormRecord(formId: number) {
 
 async function insertQuestionAndOption(formId: number, questions: any) {
   // 質問と選択肢を再作成
+  let newQuestions = [];
   for (let i = 0; i < questions.length; i++) {
     const q = questions[i];
     const newQuestion = await prisma.question.upsert({
@@ -134,5 +145,9 @@ async function insertQuestionAndOption(formId: number, questions: any) {
         data: optionsData,
       });
     }
+
+    newQuestions.push(newQuestion);
   }
+
+  return newQuestions;
 }

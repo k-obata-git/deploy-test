@@ -7,9 +7,9 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToParentElement } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
-import { BsFillGrid3X2GapFill, BsPlusLg } from "react-icons/bs";
+import { BsFillGrid3X2GapFill, BsPlusLg, BsTrash, BsXCircleFill } from "react-icons/bs";
 import Loading from './Loading';
-import { Option, Question } from '../../../types/formType';
+import { Question, Option } from '../../../types/formType';
 
 export default function FormEditor() {
   const { id } = useParams();
@@ -114,6 +114,10 @@ export default function FormEditor() {
     setQuestions([...questions, newQuestion]);
   };
 
+  const deleteQuestion = (id: number) => {
+    setQuestions(questions.filter((question, index) => (question.id !== id)));
+  };
+
   const updateLabel = (id: number, label: string) => {
     setQuestions((prev) => prev.map((q) => (q.id === id ? { ...q, label } : q)));
   };
@@ -163,6 +167,7 @@ export default function FormEditor() {
                 onOptionsChange={(options) => updateOptions(q.id, options)}
                 onMoveUp={() => moveQuestion(index, 'up')}
                 onMoveDown={() => moveQuestion(index, 'down')}
+                onDeleteQuestion={() => deleteQuestion(q.id)}
               />
             ))}
           </div>
@@ -179,13 +184,14 @@ export default function FormEditor() {
   );
 }
 
-function SortableQuestionCard({ question, onLabelChange, onTypeChange, onOptionsChange }: {
+function SortableQuestionCard({ question, onLabelChange, onTypeChange, onOptionsChange, onDeleteQuestion }: {
   question: Question;
   onLabelChange: (label: string) => void;
   onTypeChange: (type: Question['type']) => void;
   onOptionsChange: (options: Option[]) => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onDeleteQuestion: (id: number) => void;
 }) {
 
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -227,6 +233,11 @@ function SortableQuestionCard({ question, onLabelChange, onTypeChange, onOptions
     onOptionsChange(newOptions);
   };
 
+  const handleDeleteOption = (id: number) => {
+    const newOptions = question.options?.filter(option => option.id !== id) || [];
+    onOptionsChange(newOptions);
+  };
+
   return (
     <Card ref={setNodeRef} style={style}>
       <div className="text-center">
@@ -256,14 +267,20 @@ function SortableQuestionCard({ question, onLabelChange, onTypeChange, onOptions
                   {(question.options || []).map((opt, i) => (
                     <div key={i} className="d-flex gap-2 align-items-center mb-2">
                       <Form.Control value={opt.text} onChange={(e) => handleOptionLabelChange(i, e.target.value)} placeholder="新しい選択肢" required />
+                      <BsXCircleFill className="text-danger" style={{cursor: "pointer"}} onClick={() => handleDeleteOption(opt.id)} />
                     </div>
                   ))}
                 </div>
-                <div className="d-flex">
-                  <Button size="sm" variant="outline-secondary" onClick={handleAddOption} className="mt-2"><BsPlusLg />選択肢を追加</Button>
-                </div>
               </>
             )}
+            <div className="d-flex mt-4">
+              <div className="flex-grow-1">
+                {(question.type === 'radio' || question.type === 'checkbox') && (
+                  <Button size="sm" variant="outline-secondary" onClick={handleAddOption}><BsPlusLg className="mb-1 me-1" />選択肢を追加</Button>
+                )}
+              </div>
+              <Button size="sm" variant="outline-danger" onClick={() => onDeleteQuestion(question.id)}><BsTrash className="mb-1 me-1" />質問を削除</Button>
+            </div>
           </div>
         </div>
       </Card.Body>

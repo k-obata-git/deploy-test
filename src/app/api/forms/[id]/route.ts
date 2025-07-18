@@ -47,7 +47,7 @@ export async function DELETE(_: Request, props: { params: Promise<{ id: string }
   const id = Number(params.id);
 
   // フォーム削除
-  await prisma.form.deleteMany({
+  await prisma.form.delete({
     where: { id },
   });
 

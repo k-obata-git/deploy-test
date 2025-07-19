@@ -10,6 +10,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { BsChevronDown, BsChevronUp, BsFillGrid3X2GapFill, BsPlusLg, BsTrash, BsXCircle } from "react-icons/bs";
 import Loading from './Loading';
 import { Question, Option } from '../../../types/formType';
+import { BlockingOverlay } from './BlockingOverlay';
 
 export default function FormEditor() {
   const { id } = useParams();
@@ -20,6 +21,7 @@ export default function FormEditor() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState<boolean>(!!id);
   const [validated, setValidated] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ドラッグアンドドロップ用
   const containerRef = useRef<HTMLDivElement>(null);
@@ -58,6 +60,8 @@ export default function FormEditor() {
       return;
     }
 
+    setIsSubmitting(true);
+
     const cleanedQuestions = questions.map((q, index) => ({
       id: q.id,
       label: q.label.trim(),
@@ -86,6 +90,8 @@ export default function FormEditor() {
       },
       body: JSON.stringify(payload),
     });
+
+    setIsSubmitting(false);
 
     if (res.ok) {
       const data = await res.json();
@@ -138,6 +144,14 @@ export default function FormEditor() {
 
   if (loading){
     return <Loading />
+  }
+
+  if(isSubmitting) {
+    return (
+      <div className="position-relative">
+        <BlockingOverlay />
+      </div>
+    )
   }
 
   return (

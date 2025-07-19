@@ -6,6 +6,7 @@ import { Card, Button, Container, Row, Col } from 'react-bootstrap';
 import ConfirmModal from '@/app/components/ConfirmModal';
 import Loading from '@/app/components/Loading';
 import { FormType } from '../../../../types/formType';
+import { BlockingOverlay } from '@/app/components/BlockingOverlay';
 
 export default function FormListPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function FormListPage() {
   const [loading, setLoading] = useState(true);
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     getForms();
@@ -21,9 +23,12 @@ export default function FormListPage() {
   const handleDeleteConfirm = async() => {
     if (!selectedForm) return;
 
+    setIsSubmitting(true);
     const res = await fetch(`/api/forms/${selectedForm.id}`, {
       method: 'DELETE',
     });
+
+    setIsSubmitting(false);
 
     if (res.ok) {
       setShowModal(false);
@@ -42,6 +47,14 @@ export default function FormListPage() {
 
   if (loading){
     return <Loading />
+  }
+
+  if(isSubmitting) {
+    return (
+      <div className="position-relative">
+        <BlockingOverlay />
+      </div>
+    )
   }
 
   return (

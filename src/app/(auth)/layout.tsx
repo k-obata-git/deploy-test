@@ -11,7 +11,7 @@ export default function AuthLayout({
         <img src="/logo.svg" alt="Company Logo" style={{ height: '80px' }} />
         <p className="text-muted mb-4">誰でもかんたんに、美しいフォームを作成・共有・管理</p>
 
-        <Container className="py-5">
+        <Container>
           {children}
         </Container>
         <p className="text-muted mt-5" style={{ fontSize: '0.9rem' }}>© 2025 QuickForm. フォーム作成をもっとかんたんに。</p>

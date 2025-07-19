@@ -1,28 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Container, Card, Form, Button, Alert } from 'react-bootstrap';
-
-type FormType = {
-  id: number;
-  title: string;
-  description: string;
-  isPublic: boolean;
-  questions: Question[];
-};
-
-type Question = {
-  id: number;
-  label: string;
-  type: 'text' | 'radio' | 'checkbox';
-  options?: { id: number; text: string }[];
-};
-
-type Answer = {
-  questionId: number;
-  optionId: number | null;
-  value: string;
-}
+import { Card, Form, Button, Alert } from 'react-bootstrap';
+import { Answer, FormType } from '../../../types/formType';
+import { BlockingOverlay } from './BlockingOverlay';
 
 type Prop = {
   id?: number,
@@ -34,6 +15,7 @@ export default function FormView({preview, form}: Prop) {
   const [values, setValues] = useState<Answer[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: any, type: string, questionId: number, optionId: number | null) => {
     const key: string = type === 'checkbox' ? `${questionId}${optionId}` : `${questionId}`;
@@ -49,12 +31,15 @@ export default function FormView({preview, form}: Prop) {
   const handleSubmit = async () => {
     if (!form) return;
 
+    setIsSubmitting(true);
     const items = Object.values(values).filter(val => val.value?.trim());
     const res = await fetch(`/api/response/${form.id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items }),
     });
+
+    setIsSubmitting(false);
 
     if (res.ok) {
       setSubmitted(true);
@@ -63,10 +48,22 @@ export default function FormView({preview, form}: Prop) {
     }
   };
 
-  if (submitted) return <Alert variant="success">回答ありがとうございました！</Alert>;
+  if (submitted) {
+    return (
+      <Alert variant="success">回答ありがとうございました！</Alert>
+    )
+  }
 
   return (
-    <Container>
+    <>
+      <>
+        {isSubmitting && (
+          <div className="position-relative">
+            <BlockingOverlay />
+          </div>
+        )}
+      </>
+
       <Card className="my-4">
         <Card.Body>
           <h5 className="mb-3 text-muted text-break" style={{width: "100%"}}>{form?.title}</h5>
@@ -127,6 +124,6 @@ export default function FormView({preview, form}: Prop) {
           <Button onClick={handleSubmit}>送信</Button>
         </div>
       </Form>
-    </Container>
+    </>
   );
 }

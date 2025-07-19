@@ -5,21 +5,7 @@ import { useParams } from 'next/navigation';
 import { Container, Card } from 'react-bootstrap';
 import Loading from '@/app/components/Loading';
 import FormView from '@/app/components/FormView';
-
-type FormType = {
-  id: number;
-  title: string;
-  description: string;
-  isPublic: boolean;
-  questions: Question[];
-};
-
-type Question = {
-  id: number;
-  label: string;
-  type: 'text' | 'radio' | 'checkbox';
-  options?: { id: number; text: string }[];
-};
+import { FormType } from '../../../../../types/formType';
 
 export default function PublicFormPage() {
   const { id } = useParams();

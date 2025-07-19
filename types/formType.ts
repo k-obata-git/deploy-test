@@ -35,3 +35,9 @@ export type Option = {
   position: number;
   questionId: number;
 }
+
+export type Answer = {
+  questionId: number;
+  optionId: number | null;
+  value: string;
+}

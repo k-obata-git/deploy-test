@@ -2,6 +2,7 @@ import { prisma } from '../../../../prisma/prisma';
 import CredentialsProvider from "next-auth/providers/credentials";
 import type { Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
+import { verifyPassword } from '../../../../lib/hash';
 
 interface Token extends JWT {
   id?: string,
@@ -25,9 +26,22 @@ export const authOptions = {
 
       // 入力されたIDとパスワードが正しいかチェックする関数
       async authorize(credentials) {
+        if (!(credentials?.username && credentials?.password)) {
+          return null;
+        }
+
         const user = await prisma.user.findUnique({
-          where: { userId: credentials?.username, password: credentials?.password },
+          where: { userId: credentials?.username },
         });
+
+        const isValid = await verifyPassword(
+          `${credentials?.password}${credentials.username}`,
+          user!.password
+        );
+
+        if (!isValid) {
+          return null;
+        }
 
         if(user) {
           return { id: user.id.toString(), userName: user.name, role: user.role };

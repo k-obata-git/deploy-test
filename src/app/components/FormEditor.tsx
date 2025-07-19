@@ -7,7 +7,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToParentElement } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
-import { BsFillGrid3X2GapFill, BsPlusLg, BsTrash, BsXCircleFill } from "react-icons/bs";
+import { BsFillGrid3X2GapFill, BsPlusLg, BsTrash, BsXCircle } from "react-icons/bs";
 import Loading from './Loading';
 import { Question, Option } from '../../../types/formType';
 
@@ -89,7 +89,7 @@ export default function FormEditor() {
 
     if (res.ok) {
       const data = await res.json();
-      router.push(`/forms/${data.id}/preview`);
+      router.push(`/forms`);
     }
   };
 
@@ -267,7 +267,7 @@ function SortableQuestionCard({ question, onLabelChange, onTypeChange, onOptions
                   {(question.options || []).map((opt, i) => (
                     <div key={i} className="d-flex gap-2 align-items-center mb-2">
                       <Form.Control value={opt.text} onChange={(e) => handleOptionLabelChange(i, e.target.value)} placeholder="新しい選択肢" required />
-                      <BsXCircleFill className="text-danger" style={{cursor: "pointer"}} onClick={() => handleDeleteOption(opt.id)} />
+                      <BsXCircle className="text-danger" style={{cursor: "pointer"}} onClick={() => handleDeleteOption(opt.id)} />
                     </div>
                   ))}
                 </div>

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "QuickForm",
   description: "フォーム作成アプリ",
   keywords: ['Next.js', 'QuickForm', 'フォーム'],
-  themeColor: '#f8f9fa',
+  themeColor: "#f8f9fa",
   icons: "/favicon.ico",
   manifest: '/manifest.json',
 };

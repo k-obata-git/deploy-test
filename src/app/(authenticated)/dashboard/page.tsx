@@ -6,6 +6,7 @@ import { Container, Row, Col, Card, Button } from 'react-bootstrap';
 import { useSession } from 'next-auth/react';
 import Loading from '@/app/components/Loading';
 import { FormType } from '../../../../types/formType';
+import { subscribeUser } from '../../../../lib/subscribeUser';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -21,6 +22,10 @@ export default function DashboardPage() {
         setForms(data);
         setLoading(false);
     });
+
+    if(status === "authenticated" && session?.user.id) {
+      subscribeUser(session.user.id);
+    }
   }, []);
 
   const totalForms = forms.length;

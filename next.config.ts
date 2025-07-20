@@ -4,7 +4,9 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
+  mode: 'InjectManifest',
   disable: process.env.NODE_ENV === 'development', // dev中は無効に
+  swSrc: 'service-worker/sw.js',
 });
 
 const nextConfig: NextConfig = {

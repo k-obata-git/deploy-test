@@ -5,7 +5,7 @@ import { authOptions } from '../../auth/auth';
 import webpush from 'web-push';
 
 webpush.setVapidDetails(
-  'mailto:',
+  'mailto:example@example.com',
   process.env.VAPID_PUBLIC_KEY!,
   process.env.VAPID_PRIVATE_KEY!
 );

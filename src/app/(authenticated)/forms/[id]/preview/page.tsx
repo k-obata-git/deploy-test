@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Button } from 'react-bootstrap';
 import Loading from '@/app/components/Loading';
 import FormView from '@/app/components/FormView';
 import { FormType } from '../../../../../../types/formType';
@@ -24,19 +23,12 @@ export default function FormPreviewPage() {
     load();
   }, [id]);
 
-  const openResults = () => {
-    window.open(`${new URL(window.location.href).origin}/public/${id}`, '_blank')
-  }
-
   if (loading || !form){
     return <Loading />
   }
 
   return (
     <>
-      <div className="d-flex justify-content-end gap-3">
-        <Button size="sm" variant="outline-secondary" onClick={openResults}>回答ページ</Button>
-      </div>
       <FormView preview={true} form={form} />
     </>
   );

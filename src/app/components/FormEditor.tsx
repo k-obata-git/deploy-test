@@ -22,6 +22,7 @@ export default function FormEditor() {
   const [loading, setLoading] = useState<boolean>(!!id);
   const [validated, setValidated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
 
   // ドラッグアンドドロップ用
   const containerRef = useRef<HTMLDivElement>(null);
@@ -45,6 +46,7 @@ export default function FormEditor() {
         setTitle(data.title);
         setDescription(data.description ?? "");
         setQuestions(data.questions || []);
+        setIsPublic(data.isPublic);
       }
       setLoading(false);
     };
@@ -83,19 +85,20 @@ export default function FormEditor() {
       questions: cleanedQuestions,
     };
 
-    const res = await fetch('/api/forms', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+      await fetch('/api/forms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
 
-    setIsSubmitting(false);
-
-    if (res.ok) {
-      const data = await res.json();
       router.push(`/forms`);
+    } catch (err) {
+
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -142,59 +145,95 @@ export default function FormEditor() {
     );
   };
 
+  const handleToggle = async () => {
+    const nextValue = !isPublic;
+    setIsPublic(nextValue);
+    setIsSubmitting(true);
+    try {
+      await fetch(`/api/forms/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPublic: nextValue }),
+      });
+    } catch (err) {
+      // 状態を元に戻す
+      setIsPublic(!nextValue);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   if (loading){
     return <Loading />
   }
 
-  if(isSubmitting) {
-    return (
-      <div className="position-relative">
-        <BlockingOverlay />
-      </div>
-    )
-  }
-
   return (
-    <Form noValidate validated={validated} onSubmit={handleSave}>
-      <Form.Group className="mb-3" >
-        <Form.Label>フォームタイトル</Form.Label>
-        <Form.Control value={title} onChange={(e) => setTitle(e.target.value)} required />
-      </Form.Group>
-
-      <Form.Group className="mb-4">
-        <Form.Label>フォーム説明</Form.Label>
-        <Form.Control
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
-      </Form.Group>
-
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToParentElement]}>
-        <SortableContext items={questions.map((q) => q.id)} strategy={verticalListSortingStrategy}>
-          <div ref={containerRef} style={{ overflow: 'hidden' }}>
-            {questions.map((q, index) => (
-              <SortableQuestionCard
-                key={q.id}
-                question={q}
-                onLabelChange={(label) => updateLabel(q.id, label)}
-                onTypeChange={(type) => updateType(q.id, type)}
-                onOptionsChange={(options) => updateOptions(q.id, options)}
-                onMoveUp={() => moveQuestion(index, 'up')}
-                onMoveDown={() => moveQuestion(index, 'down')}
-                onDeleteQuestion={() => deleteQuestion(q.id)}
-              />
-            ))}
+    <>
+      <>
+        {isSubmitting && (
+          <div className="position-relative">
+            <BlockingOverlay />
           </div>
-        </SortableContext>
-      </DndContext>
+        )}
+      </>
+      <Form noValidate validated={validated} onSubmit={handleSave}>
+        <>
+          {id && (
+            <Form.Group className="mb-3 d-flex align-items-center justify-content-end">
+              <Form.Label className="me-3 mb-0" style={{ minWidth: '3rem' }}>
+                {isPublic ? '公開中' : '非公開'}
+              </Form.Label>
+              <Form.Check
+                type="switch"
+                id="isPublic-switch"
+                checked={isPublic}
+                disabled={loading}
+                onChange={handleToggle}
+              />
+            </Form.Group>
+          )}
+        </>
 
-      <div className="d-flex gap-3 mt-4">
-        <div className="flex-grow-1">
-          <Button variant="outline-primary" onClick={addQuestion}><BsPlusLg />質問を追加</Button>
+        <Form.Group className="mb-3" >
+          <Form.Label>フォームタイトル</Form.Label>
+          <Form.Control value={title} onChange={(e) => setTitle(e.target.value)} required />
+        </Form.Group>
+
+        <Form.Group className="mb-4">
+          <Form.Label>フォーム説明</Form.Label>
+          <Form.Control
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </Form.Group>
+
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} modifiers={[restrictToParentElement]}>
+          <SortableContext items={questions.map((q) => q.id)} strategy={verticalListSortingStrategy}>
+            <div ref={containerRef} style={{ overflow: 'hidden' }}>
+              {questions.map((q, index) => (
+                <SortableQuestionCard
+                  key={q.id}
+                  question={q}
+                  onLabelChange={(label) => updateLabel(q.id, label)}
+                  onTypeChange={(type) => updateType(q.id, type)}
+                  onOptionsChange={(options) => updateOptions(q.id, options)}
+                  onMoveUp={() => moveQuestion(index, 'up')}
+                  onMoveDown={() => moveQuestion(index, 'down')}
+                  onDeleteQuestion={() => deleteQuestion(q.id)}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+
+        <div className="d-flex gap-3 mt-4">
+          <div className="flex-grow-1">
+            <Button variant="outline-primary" onClick={addQuestion}><BsPlusLg />質問を追加</Button>
+          </div>
+          <Button variant="primary" type="submit">保存する</Button>
         </div>
-        <Button variant="primary" type="submit">保存する</Button>
-      </div>
-    </Form>
+      </Form>
+    </>
   );
 }
 

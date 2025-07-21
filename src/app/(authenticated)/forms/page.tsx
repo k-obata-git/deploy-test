@@ -23,16 +23,19 @@ export default function FormListPage() {
   const handleDeleteConfirm = async() => {
     if (!selectedForm) return;
 
+    setShowModal(false);
     setIsSubmitting(true);
-    const res = await fetch(`/api/forms/${selectedForm.id}`, {
-      method: 'DELETE',
-    });
 
-    setIsSubmitting(false);
+    try {
+      await fetch(`/api/forms/${selectedForm.id}`, {
+        method: 'DELETE',
+      });
 
-    if (res.ok) {
-      setShowModal(false);
       getForms();
+    } catch (err) {
+
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -49,16 +52,15 @@ export default function FormListPage() {
     return <Loading />
   }
 
-  if(isSubmitting) {
-    return (
-      <div className="position-relative">
-        <BlockingOverlay />
-      </div>
-    )
-  }
-
   return (
     <Container className="">
+      <>
+        {isSubmitting && (
+          <div className="position-relative">
+            <BlockingOverlay />
+          </div>
+        )}
+      </>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>フォーム一覧</h2>
         <Button onClick={() => router.push('/forms/new')}>新規フォーム作成</Button>

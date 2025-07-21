@@ -83,7 +83,8 @@ export async function POST(req: Request) {
       data: {
         title,
         description,
-        userId: Number(session.user.id)
+        userId: Number(session.user.id),
+        isPublic: false,
       },
     });
     // 質問・選択肢を登録

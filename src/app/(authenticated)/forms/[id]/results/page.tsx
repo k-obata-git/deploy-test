@@ -16,7 +16,7 @@ type QuestionSummary =
   | {
       id: number;
       label: string;
-      type: 'radio' | 'checkbox';
+      type: 'radio' | 'checkbox' | 'select';
       counts: Record<string, number>;
     };
 
@@ -57,7 +57,7 @@ export default function FormResultsPage() {
       };
     }
 
-    if (q.type === 'radio' || q.type === 'checkbox') {
+    if (q.type === 'radio' || q.type === 'checkbox' || q.type === 'select') {
       const counts: Record<string, number> = {};
       q.options!.forEach((opt) => {
         counts[opt.text] = 0;
@@ -118,7 +118,7 @@ export default function FormResultsPage() {
                   </>
                 )}
 
-                {(q.type === 'radio' || q.type === 'checkbox') && (
+                {(q.type === 'radio' || q.type === 'checkbox' || q.type === 'select') && (
                   <div>
                     {Object.entries(q.counts).map(([optionText, count]) => {
                       const percent =

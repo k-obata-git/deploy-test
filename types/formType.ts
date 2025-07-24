@@ -21,7 +21,7 @@ export type FormType = {
 export type Question = {
   id: number;
   label: string;
-  type: 'text' | 'radio' | 'checkbox';
+  type: 'text' | 'radio' | 'checkbox' | 'select';
   position?: number;
   formId?: number;
   createdAt?: Date;

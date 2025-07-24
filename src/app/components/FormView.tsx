@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, Form, Button, Alert } from 'react-bootstrap';
+import { Card, Form, Button, Alert, ListGroup } from 'react-bootstrap';
 import { Answer, FormType } from '../../../types/formType';
 import { BlockingOverlay } from './BlockingOverlay';
 
@@ -23,6 +23,18 @@ export default function FormView({preview, form}: Prop) {
       questionId: questionId,
       optionId: e.target.checked ? optionId : null,
       value: e.target.checked || type === 'text' ? e.target.value : null,
+    }
+
+    setValues((prev) => ({ ...prev, [key]: item }))
+  };
+
+  const handleSelectChange = (e: any, questionId: number) => {
+    const optionId = e.target.selectedOptions[0].id
+    const key: string = `${questionId}`;
+    const item: Answer = {
+      questionId: questionId,
+      optionId: optionId ? Number(optionId) : null,
+      value: optionId ? e.target.value : null,
     }
 
     setValues((prev) => ({ ...prev, [key]: item }))
@@ -114,6 +126,35 @@ export default function FormView({preview, form}: Prop) {
                     disabled={preview}
                   />
                 ))}
+
+              {q.type === 'select' && (
+                <>
+                  {preview && (
+                    <>
+                      <Form.Select disabled>
+                        <option>セレクトボックス（プレビュー中）</option>
+                      </Form.Select>
+                      <ListGroup>
+                        {
+                          q.options?.map((opt) => (
+                            <ListGroup.Item key={opt.id}>{opt.text}</ListGroup.Item>
+                          ))
+                        }
+                      </ListGroup>
+                    </>
+                  )}
+                  {!preview && (
+                    <Form.Select onChange={(e) => handleSelectChange(e, q.id)}>
+                      <option id={undefined} value={undefined}>未選択</option>
+                      {
+                        q.options?.map((opt) => (
+                          <option key={opt.id} id={opt.id.toString()} value={opt.text}>{opt.text}</option>
+                        ))
+                      }
+                    </Form.Select>
+                  )}
+                </>
+              )}
             </Card.Body>
           </Card>
         ))}

@@ -318,11 +318,12 @@ function SortableQuestionCard({ question, onLabelChange, onTypeChange, onOptions
                 <Form.Select value={question.type} onChange={(e) => onTypeChange(e.target.value as Question['type'])}>
                   <option value="text">テキスト</option>
                   <option value="radio">単一選択（ラジオ）</option>
+                  <option value="select">単数選択（セレクトボックス）</option>
                   <option value="checkbox">複数選択（チェックボックス）</option>
                 </Form.Select>
               </Form.Group>
 
-              {(question.type === 'radio' || question.type === 'checkbox') && (
+              {(question.type === 'radio' || question.type === 'checkbox' || question.type === 'select') && (
                 <>
                   <div>
                     <Form.Label hidden={!question.options?.length}>選択肢</Form.Label>
@@ -337,7 +338,7 @@ function SortableQuestionCard({ question, onLabelChange, onTypeChange, onOptions
               )}
               <div className="d-flex mt-4">
                 <div className="flex-grow-1">
-                  {(question.type === 'radio' || question.type === 'checkbox') && (
+                  {(question.type === 'radio' || question.type === 'checkbox' || question.type === 'select') && (
                     <Button size="sm" variant="outline-secondary" onClick={handleAddOption}><BsPlusLg className="mb-1 me-1" />選択肢を追加</Button>
                   )}
                 </div>

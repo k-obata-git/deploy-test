@@ -135,7 +135,7 @@ async function insertQuestionAndOption(formId: number, questions: any) {
       },
     });
 
-    if (q.type === 'radio' || q.type === 'checkbox') {
+    if (q.type === 'radio' || q.type === 'checkbox' || q.type === 'select') {
       const optionsData = (q.options || []).map((opt: any, j: number) => ({
         text: opt.text,
         position: opt.position,

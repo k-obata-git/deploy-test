@@ -18,10 +18,12 @@ export type FormType = {
   }[]
 }
 
+export type QuestionType = 'text' | 'radio' | 'checkbox' | 'select'
+
 export type Question = {
   id: number;
   label: string;
-  type: 'text' | 'radio' | 'checkbox' | 'select';
+  type: QuestionType;
   position?: number;
   formId?: number;
   createdAt?: Date;

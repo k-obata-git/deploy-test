@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, Collapse, Form } from 'react-bootstrap';
+import { Button, Card, Collapse, Dropdown, Form } from 'react-bootstrap';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -9,8 +9,9 @@ import { restrictToParentElement } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { BsChevronDown, BsChevronUp, BsFillGrid3X2GapFill, BsPlusLg, BsTrash, BsXCircle } from "react-icons/bs";
 import Loading from './Loading';
-import { Question, Option } from '../../../types/formType';
+import { Question, Option, QuestionType } from '../../../types/formType';
 import { BlockingOverlay } from './BlockingOverlay';
+import MasterQuestionModal from './MasterQuestionModal';
 
 export default function FormEditor() {
   const { id } = useParams();
@@ -23,6 +24,7 @@ export default function FormEditor() {
   const [validated, setValidated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [showModal, setShowModal] = useState(false)
 
   // ドラッグアンドドロップ用
   const containerRef = useRef<HTMLDivElement>(null);
@@ -113,14 +115,7 @@ export default function FormEditor() {
   };
 
   const addQuestion = () => {
-    const dateNow = new Date();
-    const newQuestion: Question = {
-      id: Number(`${dateNow.getHours()}${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}`),
-      label: "",
-      type: 'text',
-      options: [],
-    };
-    setQuestions([...questions, newQuestion]);
+    setQuestions([...questions, createNewQuestion("", 'text', [])]);
   };
 
   const deleteQuestion = (id: number) => {
@@ -162,6 +157,20 @@ export default function FormEditor() {
       setIsSubmitting(false);
     }
   };
+
+  const onAdd = (q: Question) => {
+    setQuestions([...questions, createNewQuestion(q.label, q.type, q.options)]);
+  }
+
+  const createNewQuestion = (label: string, type: QuestionType, options: Option[] | undefined) => {
+    const dateNow = new Date();
+    return {
+      id: Number(`${dateNow.getHours()}${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}`),
+      label: label,
+      type: type,
+      options: options,
+    };
+  }
 
   if (loading){
     return <Loading />
@@ -228,11 +237,31 @@ export default function FormEditor() {
 
         <div className="d-flex gap-3 mt-4">
           <div className="flex-grow-1">
-            <Button variant="outline-primary" onClick={addQuestion}><BsPlusLg />質問を追加</Button>
+            {
+            // <SplitButton variant="outline-primary" title="質問を追加" id="add-question-split" onClick={addQuestion}>
+            //   <Dropdown.Item onClick={() => setShowModal(true)}>定型の質問を追加</Dropdown.Item>
+            // </SplitButton>
+            }
+
+            <Dropdown>
+              <Dropdown.Toggle variant="outline-primary" id="dropdown-add-question">質問を追加</Dropdown.Toggle>
+              <Dropdown.Menu>
+                <Dropdown.Item onClick={addQuestion}>空の質問を追加</Dropdown.Item>
+                <Dropdown.Item onClick={() => setShowModal(true)}>マスタから選択</Dropdown.Item>
+              </Dropdown.Menu>
+            </Dropdown>
+
+
           </div>
           <Button variant="primary" type="submit">保存する</Button>
         </div>
       </Form>
+
+      <MasterQuestionModal
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        onSelect={onAdd}
+      />
     </>
   );
 }
@@ -318,7 +347,7 @@ function SortableQuestionCard({ question, onLabelChange, onTypeChange, onOptions
                 <Form.Select value={question.type} onChange={(e) => onTypeChange(e.target.value as Question['type'])}>
                   <option value="text">テキスト</option>
                   <option value="radio">単一選択（ラジオ）</option>
-                  <option value="select">単数選択（セレクトボックス）</option>
+                  <option value="select">単一選択（セレクトボックス）</option>
                   <option value="checkbox">複数選択（チェックボックス）</option>
                 </Form.Select>
               </Form.Group>

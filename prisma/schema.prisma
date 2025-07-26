@@ -94,6 +94,22 @@ model PushSubscription {
   user      User?    @relation(fields: [userId], references: [id])
 }
 
+model MasterQuestion {
+  id        Int            @id @default(autoincrement())
+  label     String
+  type      QuestionType
+  options   MasterOption[]
+  createdAt DateTime       @default(now()) @db.Timestamptz(3)
+}
+
+model MasterOption {
+  id               Int            @id @default(autoincrement())
+  text             String
+  position         Int
+  masterQuestionId Int
+  masterQuestion   MasterQuestion @relation(fields: [masterQuestionId], references: [id])
+}
+
 enum QuestionType {
   text
   radio

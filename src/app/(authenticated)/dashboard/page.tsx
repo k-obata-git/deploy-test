@@ -50,7 +50,7 @@ export default function DashboardPage() {
       <h2 className="mb-3">こんにちは、{userName}さん</h2>
       <div className="d-flex justify-content-end gap-2 mt-4 mb-4">
         <Button variant="outline-secondary" onClick={() => router.push('/forms')}>フォーム一覧</Button>
-        <Button variant="primary" onClick={() => router.push('/forms/new')}>新規フォーム作成</Button>
+        <Button variant="outline-primary" onClick={() => router.push('/forms/new')}>新規フォーム作成</Button>
       </div>
 
       <Row className="mb-4">

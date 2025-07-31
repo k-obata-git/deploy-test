@@ -51,14 +51,14 @@ export default function FormEditor({ formTemplate }: Props) {
         const dateNow = new Date();
         const options = q.options.map((opt: Option, j: number) => {
           return {
-            id: Number(`${dateNow.getHours()}${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}${j}`),
+            id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}${j}`),
             text: opt.text,
             position: opt.position
           }
         })
 
         return {
-          id: Number(`${dateNow.getHours()}${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}`),
+          id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}`),
           label: q.label,
           type: q.type,
           position: q.position,
@@ -197,7 +197,7 @@ export default function FormEditor({ formTemplate }: Props) {
   const createNewQuestion = (label: string, type: QuestionType, options: Option[] | undefined) => {
     const dateNow = new Date();
     return {
-      id: Number(`${dateNow.getHours()}${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}`),
+      id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}`),
       label: label,
       type: type,
       options: options,

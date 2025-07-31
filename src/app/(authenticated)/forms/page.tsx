@@ -70,8 +70,8 @@ export default function FormListPage() {
           </div>
         )}
       </>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>フォーム一覧</h2>
+      <h2>フォーム一覧</h2>
+      <div className="d-flex justify-content-end mb-4">
         <SplitButton variant="outline-primary" title="新規フォーム作成" id="add-question-split" onClick={() => router.push('/forms/new')}>
           <Dropdown.Item onClick={() => setShowTemplateModal(true)}>テンプレートから作成</Dropdown.Item>
         </SplitButton>

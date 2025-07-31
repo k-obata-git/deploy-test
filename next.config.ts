@@ -23,7 +23,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  reactStrictMode: true,
+  reactStrictMode: false,
   distDir: 'build',
   devIndicators: false,
   // devIndicators: {

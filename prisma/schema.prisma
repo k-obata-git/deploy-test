@@ -110,6 +110,18 @@ model MasterOption {
   masterQuestion   MasterQuestion @relation(fields: [masterQuestionId], references: [id])
 }
 
+model FormTemplate {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  questions   Json
+  userId      Int
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+
+  @@index([userId])
+}
+
 enum QuestionType {
   text
   radio

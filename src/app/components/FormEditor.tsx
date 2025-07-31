@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, Collapse, Dropdown, Form } from 'react-bootstrap';
+import { Button, Card, Collapse, Dropdown, Form, SplitButton } from 'react-bootstrap';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -9,11 +9,15 @@ import { restrictToParentElement } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import { BsChevronDown, BsChevronUp, BsFillGrid3X2GapFill, BsPlusLg, BsTrash, BsXCircle } from "react-icons/bs";
 import Loading from './Loading';
-import { Question, Option, QuestionType } from '../../../types/formType';
+import { Question, Option, QuestionType, Template } from '../../../types/formType';
 import { BlockingOverlay } from './BlockingOverlay';
 import MasterQuestionModal from './MasterQuestionModal';
 
-export default function FormEditor() {
+type Props = {
+  formTemplate?: Template | null,
+};
+
+export default function FormEditor({ formTemplate }: Props) {
   const { id } = useParams();
   const router = useRouter();
 
@@ -40,7 +44,35 @@ export default function FormEditor() {
   };
 
   useEffect(() => {
-    if (!id) return;
+    if(formTemplate) {
+      setTitle(formTemplate.title);
+      setDescription(formTemplate.description ?? "");
+      const questions = formTemplate.questions.map((q, i) => {
+        const dateNow = new Date();
+        const options = q.options.map((opt: Option, j: number) => {
+          return {
+            id: Number(`${dateNow.getHours()}${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}${j}`),
+            text: opt.text,
+            position: opt.position
+          }
+        })
+
+        return {
+          id: Number(`${dateNow.getHours()}${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}`),
+          label: q.label,
+          type: q.type,
+          position: q.position,
+          options: options,
+        }
+      })
+      setQuestions(questions || []);
+      return;
+    }
+
+    if (!id) {
+      return;
+    }
+
     const fetchForm = async () => {
       const res = await fetch(`/api/forms/${id}`);
       if (res.ok) {
@@ -53,7 +85,7 @@ export default function FormEditor() {
       setLoading(false);
     };
     fetchForm();
-  }, [id]);
+  }, [id, formTemplate]);
 
   const handleSave = async (event: any) => {
     event.preventDefault();
@@ -237,21 +269,9 @@ export default function FormEditor() {
 
         <div className="d-flex gap-3 mt-4">
           <div className="flex-grow-1">
-            {
-            // <SplitButton variant="outline-primary" title="質問を追加" id="add-question-split" onClick={addQuestion}>
-            //   <Dropdown.Item onClick={() => setShowModal(true)}>定型の質問を追加</Dropdown.Item>
-            // </SplitButton>
-            }
-
-            <Dropdown>
-              <Dropdown.Toggle variant="outline-primary" id="dropdown-add-question">質問を追加</Dropdown.Toggle>
-              <Dropdown.Menu>
-                <Dropdown.Item onClick={addQuestion}>空の質問を追加</Dropdown.Item>
-                <Dropdown.Item onClick={() => setShowModal(true)}>マスタから選択</Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-
-
+            <SplitButton variant="outline-primary" title="質問を追加" id="add-question-split" onClick={addQuestion}>
+              <Dropdown.Item onClick={() => setShowModal(true)}>マスタから選択</Dropdown.Item>
+            </SplitButton>
           </div>
           <Button variant="primary" type="submit">保存する</Button>
         </div>

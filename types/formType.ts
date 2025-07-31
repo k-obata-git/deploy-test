@@ -43,3 +43,10 @@ export type Answer = {
   optionId: number | null;
   value: string;
 }
+
+export type Template = {
+  id: string;
+  title: string;
+  description?: string;
+  questions: any[]; // 任意の JSON 配列
+};

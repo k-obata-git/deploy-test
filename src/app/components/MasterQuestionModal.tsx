@@ -11,8 +11,9 @@ type Props = {
 }
 
 export default function MasterQuestionModal({ show, onClose, onSelect }: Props) {
-  const [questions, setQuestions] = useState<Question[]>([])
-  const [selectedId, setSelectedId] = useState<Number | null>(null)
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [selectedId, setSelectedId] = useState<Number | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (show) {
@@ -21,6 +22,9 @@ export default function MasterQuestionModal({ show, onClose, onSelect }: Props) 
       fetch('/api/master-questions')
         .then(res => res.json())
         .then(setQuestions)
+        .then(() => setLoading(false))
+    } else {
+      setLoading(true);
     }
   }, [show])
 
@@ -33,7 +37,7 @@ export default function MasterQuestionModal({ show, onClose, onSelect }: Props) 
     }
   }
 
-  return (
+  return (!loading &&
     <Modal show={show} onHide={onClose} centered>
       <Modal.Header closeButton>
         <Modal.Title>定型質問を追加</Modal.Title>

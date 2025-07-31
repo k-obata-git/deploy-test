@@ -2,21 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Button, Container, Row, Col } from 'react-bootstrap';
+import { Card, Button, Container, Row, Col, SplitButton, Dropdown } from 'react-bootstrap';
 import ConfirmModal from '@/app/components/ConfirmModal';
 import Loading from '@/app/components/Loading';
-import { FormType } from '../../../../types/formType';
+import { FormType, Template } from '../../../../types/formType';
 import { BlockingOverlay } from '@/app/components/BlockingOverlay';
 import ShareActionsModal from '@/app/components/ShareActionsModal';
+import TemplateSelectModal from '@/app/components/TemplateSelectModal';
 
 export default function FormListPage() {
   const router = useRouter();
   const [forms, setForms] = useState<FormType[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showShareActionsModal, setShowShareActionsModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
 
   useEffect(() => {
     getForms();
@@ -50,6 +52,11 @@ export default function FormListPage() {
       });
   }
 
+  const handleTemplateSelect = (template: Template) => {
+    setShowTemplateModal(false);
+    router.push(`/forms/new?templateId=${template.id}`)
+  };
+
   if (loading){
     return <Loading />
   }
@@ -65,7 +72,9 @@ export default function FormListPage() {
       </>
       <div className="d-flex justify-content-between align-items-center mb-4">
         <h2>フォーム一覧</h2>
-        <Button onClick={() => router.push('/forms/new')}>新規フォーム作成</Button>
+        <SplitButton variant="outline-primary" title="新規フォーム作成" id="add-question-split" onClick={() => router.push('/forms/new')}>
+          <Dropdown.Item onClick={() => setShowTemplateModal(true)}>テンプレートから作成</Dropdown.Item>
+        </SplitButton>
       </div>
 
       <Row>
@@ -102,6 +111,7 @@ export default function FormListPage() {
 
       <ConfirmModal show={showModal} onClose={() => setShowModal(false)} onConfirm={handleDeleteConfirm} itemName={selectedForm?.title} />
       <ShareActionsModal show={showShareActionsModal} onHide={() => setShowShareActionsModal(false)} formUrl={`${new URL(window.location.href).origin}/public/${selectedForm?.id.toString()}`} />
+      <TemplateSelectModal show={showTemplateModal} onClose={() => setShowTemplateModal(false)} onSelect={handleTemplateSelect} />
     </Container>
   );
 }

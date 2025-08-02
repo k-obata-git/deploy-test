@@ -1,6 +1,7 @@
 import { prisma } from '../../../../../prisma/prisma';
 import { NextResponse } from 'next/server';
 
+// 回答用フォーム取得（認証なしでアクセス可能）
 export async function GET(_: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   const formId = params.id;

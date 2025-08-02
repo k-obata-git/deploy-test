@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '../../../../../prisma/prisma'
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../../auth/auth';
 
-// POST 新規テンプレート作成
+// TODO
 export async function POST(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!(session?.user?.id && session?.user?.isAdmin)) {
+    return NextResponse.json({ error: 'Unauthorized', session }, { status: 401 });
+  }
+
   const data = await req.json();
   const newTemplate = await prisma.formTemplate.create({
     data: {
@@ -16,8 +23,13 @@ export async function POST(req: Request) {
   return NextResponse.json(newTemplate);
 }
 
-// GET 一覧取得
+// テンプレート一覧取得
 export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!(session?.user?.id && session?.user?.isAdmin)) {
+    return NextResponse.json({ error: 'Unauthorized', session }, { status: 401 });
+  }
+
   const templates = await prisma.formTemplate.findMany({
     orderBy: { createdAt: "desc" },
   });

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
 import { authOptions } from '../auth/auth';
 
+// ログインユーザのフォーム一覧取得
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -30,6 +31,7 @@ export async function GET() {
   return NextResponse.json(forms);
 }
 
+// フォーム新規登録、更新
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {

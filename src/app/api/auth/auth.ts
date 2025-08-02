@@ -8,6 +8,7 @@ interface Token extends JWT {
   id?: string,
   userName?: string,
   role?: string,
+  isAdmin?: boolean,
 }
 
 export const authOptions = {
@@ -44,7 +45,7 @@ export const authOptions = {
         }
 
         if(user) {
-          return { id: user.id.toString(), userName: user.name, role: user.role };
+          return { id: user.id.toString(), userName: user.name, role: user.role, isAdmin: user.role === 0 ? true : false };
         }
 
         return null;
@@ -60,21 +61,21 @@ export const authOptions = {
       session.user = {
         ...session.user,
         id: token.id ?? null,
-        role: token.role ?? null,
         userName: token.userName ?? null,
-      } as typeof session.user & { id?: string } & { role?: string | null } & { userName?: string | null };
+        role: token.role ?? null,
+        isAdmin: token.isAdmin,
+      } as typeof session.user & { id?: string } & { userName?: string | null } & { role?: string | null } & { isAdmin?: boolean };
       return session;
     },
     // ログイン後、トークンに userId、 role を保存
     async jwt({ token, user }: { token: Token; user?: unknown }) {
-      if (user && typeof user === "object" && "id" in user && "role" in user && "userName" in user) {
+      if (user && typeof user === "object" && "id" in user && "userName" in user && "role" in user && "isAdmin" in user) {
         token.id = (user as { id: string }).id;
-        token.role = (user as { role?: string }).role;
         token.userName = (user as { userName?: string }).userName;
+        token.role = (user as { role?: string }).role;
+        token.isAdmin = (user as { isAdmin?: boolean }).isAdmin ?? false;
       }
       return token;
     },
   },
 }
-
-// export default NextAuth(authOptions)

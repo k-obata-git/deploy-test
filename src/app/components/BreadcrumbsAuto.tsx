@@ -13,12 +13,14 @@ const LABEL_MAP: Record<string, string> = {
   preview: 'プレビュー',
   edit: '編集',
   new: '作成',
+  admin: '管理者ダッシュボード',
 };
 
 export default function BreadcrumbsAuto() {
   const router = useRouter();
-  const pathname = usePathname(); // 例: "/forms/123/results"
-  const segments = pathname.split('/').filter((seg: any) => isNaN(seg) && seg !== "dashboard"); // ['', 'forms', '123', 'results'] → ['forms', '123', 'results']
+  const pathname = usePathname();
+  const hiddenPaths = ["dashboard", "admin"];
+  const segments = pathname.split('/').filter((seg: any) => isNaN(seg) && !hiddenPaths.includes(seg)); // ['', 'forms', '123', 'results'] → ['forms', '123', 'results']
 
   const crumbs = segments.map((segment: any, index: number) => {
     const href = '/' + segments.slice(0, index + 1).join('/');
@@ -31,8 +33,8 @@ export default function BreadcrumbsAuto() {
 
   return (
     <Breadcrumb>
-      <Breadcrumb.Item className="text-decoration-none" onClick={() => router.push(`/dashboard`)} hidden={pathname === `/dashboard`}>ダッシュボード</Breadcrumb.Item>
-      <span className="ms-2 me-2" hidden={pathname === `/dashboard`}>/</span>
+      <Breadcrumb.Item className="text-decoration-none" onClick={() => router.push(`/dashboard`)} hidden={hiddenPaths.includes(pathname.replace("/", ""))}>ダッシュボード</Breadcrumb.Item>
+      <span className="ms-2 me-2" hidden={!!hiddenPaths.includes(pathname.replace("/", ""))}>/</span>
       {crumbs.map((crumb, i) => (
         <React.Fragment key={i}>
           {crumb.href ? (

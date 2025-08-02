@@ -3,7 +3,7 @@
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Container, Navbar, NavbarBrand, Nav, NavItem } from 'react-bootstrap';
+import { Container, Navbar, NavbarBrand, Nav, Dropdown } from 'react-bootstrap';
 import BreadcrumbsAuto from '../components/BreadcrumbsAuto';
 
 export default function AuthenticatedLayout({
@@ -41,7 +41,20 @@ export default function AuthenticatedLayout({
           <Container>
             <NavbarBrand>QuickForm</NavbarBrand>
             <Nav className="ms-auto">
-              <NavItem onClick={logout} style={{color: "#fff", cursor: "pointer"}}><span>ログアウト</span></NavItem>
+              <Dropdown align="end">
+                <Dropdown.Toggle variant="dark" id="dropdown-basic" style={{maxWidth: "12rem"}} className="d-flex align-items-center">
+                  <p className="m-0 text-truncate">{session?.user.userName}</p>
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu>
+                  <Dropdown.Item href="/dashboard">ダッシュボード</Dropdown.Item>
+                  {session?.user.isAdmin && (
+                    <Dropdown.Item href="/admin">管理者ダッシュボード</Dropdown.Item>
+                  )}
+                  <Dropdown.Divider />
+                  <Dropdown.Item onClick={logout}>ログアウト</Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
             </Nav>
           </Container>
         </Navbar>

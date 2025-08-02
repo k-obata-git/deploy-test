@@ -48,5 +48,6 @@ export type Template = {
   id: string;
   title: string;
   description?: string;
+  userId?: Number,
   questions: any[]; // 任意の JSON 配列
 };

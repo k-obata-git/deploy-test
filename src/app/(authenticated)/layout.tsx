@@ -47,9 +47,9 @@ export default function AuthenticatedLayout({
                 </Dropdown.Toggle>
 
                 <Dropdown.Menu>
-                  <Dropdown.Item href="/dashboard">ダッシュボード</Dropdown.Item>
+                  <Dropdown.Item onClick={() => router.replace("/dashboard")}>ダッシュボード</Dropdown.Item>
                   {session?.user.isAdmin && (
-                    <Dropdown.Item href="/admin">管理者ダッシュボード</Dropdown.Item>
+                    <Dropdown.Item onClick={() => router.replace("/admin")}>管理者ダッシュボード</Dropdown.Item>
                   )}
                   <Dropdown.Divider />
                   <Dropdown.Item onClick={logout}>ログアウト</Dropdown.Item>

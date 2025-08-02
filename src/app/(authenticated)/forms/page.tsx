@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Button, Container, Row, Col, SplitButton, Dropdown } from 'react-bootstrap';
+import { Card, Button, Container, Row, Col, SplitButton, Dropdown, Alert } from 'react-bootstrap';
 import ConfirmModal from '@/app/components/ConfirmModal';
 import Loading from '@/app/components/Loading';
 import { FormType, Template } from '../../../../types/formType';
@@ -19,6 +19,7 @@ export default function FormListPage() {
   const [showModal, setShowModal] = useState(false);
   const [showShareActionsModal, setShowShareActionsModal] = useState(false);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     getForms();
@@ -31,11 +32,16 @@ export default function FormListPage() {
     setIsSubmitting(true);
 
     try {
-      await fetch(`/api/forms/${selectedForm.id}`, {
+      const res = await fetch(`/api/forms/${selectedForm.id}`, {
         method: 'DELETE',
       });
 
-      getForms();
+      if(res.ok) {
+        getForms();
+        setError("");
+      } else {
+        setError("削除に失敗しました");
+      }
     } catch (err) {
 
     } finally {
@@ -76,6 +82,7 @@ export default function FormListPage() {
           <Dropdown.Item onClick={() => setShowTemplateModal(true)}>テンプレートから作成</Dropdown.Item>
         </SplitButton>
       </div>
+      {error && <Alert variant="danger">{error}</Alert>}
 
       <Row>
         {forms.length === 0 ? (

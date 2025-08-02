@@ -1,6 +1,6 @@
 'use client';
 
-import { Button, Card, Collapse, Dropdown, Form, SplitButton } from 'react-bootstrap';
+import { Alert, Button, Card, Collapse, Dropdown, Form, SplitButton } from 'react-bootstrap';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -28,7 +28,8 @@ export default function FormEditor({ formTemplate }: Props) {
   const [validated, setValidated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
-  const [showModal, setShowModal] = useState(false)
+  const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState('');
 
   // ドラッグアンドドロップ用
   const containerRef = useRef<HTMLDivElement>(null);
@@ -120,7 +121,7 @@ export default function FormEditor({ formTemplate }: Props) {
     };
 
     try {
-      await fetch('/api/forms', {
+      const res = await fetch('/api/forms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -128,7 +129,11 @@ export default function FormEditor({ formTemplate }: Props) {
         body: JSON.stringify(payload),
       });
 
-      router.push(`/forms`);
+      if(res.ok) {
+        router.push(`/forms`);
+      }else {
+        setError("登録、更新に失敗しました");
+      }
     } catch (err) {
 
     } finally {
@@ -177,11 +182,19 @@ export default function FormEditor({ formTemplate }: Props) {
     setIsPublic(nextValue);
     setIsSubmitting(true);
     try {
-      await fetch(`/api/forms/${id}`, {
+      const res = await fetch(`/api/forms/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isPublic: nextValue }),
       });
+
+      if(res.ok) {
+        setError("");
+      } else {
+        // 状態を元に戻す
+        setIsPublic(!nextValue);
+        setError("更新に失敗しました");
+      }
     } catch (err) {
       // 状態を元に戻す
       setIsPublic(!nextValue);
@@ -217,6 +230,7 @@ export default function FormEditor({ formTemplate }: Props) {
           </div>
         )}
       </>
+      {error && <Alert variant="danger">{error}</Alert>}
       <Form noValidate validated={validated} onSubmit={handleSave}>
         <>
           {id && (

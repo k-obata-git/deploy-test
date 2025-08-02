@@ -22,6 +22,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized', session }, { status: 401 });
   }
 
-  const questions = await prisma.masterQuestion.findMany();
+  const questions = await prisma.masterQuestion.findMany({
+    include: {
+      options: {
+        orderBy: { position: 'asc' },
+      }
+    }
+  });
   return NextResponse.json(questions);
 }

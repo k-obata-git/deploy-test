@@ -1,0 +1,20 @@
+import { NextResponse } from 'next/server'
+import { prisma } from '../../../../../../prisma/prisma'
+import { authOptions } from '@/app/api/auth/auth';
+import { getServerSession } from 'next-auth';
+
+// テンプレート1件削除
+export async function DELETE(_: Request, props: { params: Promise<{ id: string }> }) {
+  const session = await getServerSession(authOptions);
+  if (!(session?.user?.id && session?.user?.isAdmin)) {
+    return NextResponse.json({ error: 'Unauthorized', session }, { status: 401 });
+  }
+
+  const params = await props.params;
+  await prisma.formTemplate.delete({
+    where: {
+      id: Number(params.id)
+    },
+   });
+  return NextResponse.json({ success: true });
+}

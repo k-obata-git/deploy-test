@@ -1,10 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Table, Button, Form, InputGroup, Pagination, Card } from 'react-bootstrap';
+import { Table, Button, Form, InputGroup, Pagination, Card, Alert } from 'react-bootstrap';
+import { BsCardList, BsCheckSquare, BsFileFont, BsQuestionCircle, BsUiRadios } from 'react-icons/bs';
 import { sortBy } from '../../../../lib/sort';
 import { Question } from '../../../../types/formType';
-import { BsCardList, BsCheckSquare, BsFileFont, BsQuestionCircle, BsUiRadios } from 'react-icons/bs';
+import EditQuestionModal from './EditQuestionModal';
+import ConfirmModal from '../ConfirmModal';
+import { BlockingOverlay } from '../BlockingOverlay';
+import Loading from '../Loading';
 
 const PAGE_SIZE = 5;
 const useIsMobile = () => {
@@ -20,7 +24,15 @@ const useIsMobile = () => {
 
 export default function MasterQuestionTab() {
   const isMobile = useIsMobile();
-  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState("");
+
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [selectedItem, setSelectedItem] = useState<Question | null>(null);
+
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<"" | "label" | "type">("");
   const [sortAsc, setSortAsc] = useState(true);
@@ -28,8 +40,11 @@ export default function MasterQuestionTab() {
 
   const fetchQuestions = async () => {
     const res = await fetch('/api/admin/master-questions');
-    const data = await res.json();
-    setQuestions(data);
+    if(res.ok) {
+      const data = await res.json();
+      setQuestions(data);
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -39,7 +54,7 @@ export default function MasterQuestionTab() {
   const filtered = questions.filter((q: Question) =>
     q.label.toLowerCase().includes(search.toLowerCase())
   );
-  const sorted = sortBy(filtered, sortKey, sortAsc);
+  const sorted = sortKey ? sortBy(filtered, sortKey, sortAsc) : filtered;
   const paginated = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const pageCount = Math.ceil(sorted.length / PAGE_SIZE);
 
@@ -67,8 +82,111 @@ export default function MasterQuestionTab() {
     }
   };
 
+  const editMasterQuestion = (id: number | null) => {
+    const target = filtered.find((q: Question) => q.id === id);
+    if(target) {
+      setSelectedItem(target);
+    } else {
+      const dateNow = new Date();
+      setSelectedItem({
+        id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}`),
+        label: "",
+        type: "text",
+        options: [],
+      })
+    }
+    setShowEditModal(true);
+  };
+
+  const hideEditQuestionModal = () => {
+    setShowEditModal(false);
+    setSelectedItem(null);
+  }
+
+  const deleteMasterQuestion = (q: Question) => {
+    setSelectedItem(q);
+    setShowModal(true);
+  }
+
+  const onSave = async (updated: Question) => {
+    setShowEditModal(false);
+    setIsSubmitting(true);
+
+    const payload = {
+      id: updated.id,
+      label: updated.label.trim(),
+      type: updated.type,
+      options: updated.type === 'text' ? [] : (updated.options || []).map((opt, index) => {
+        return {
+          id: opt.id,
+          text: opt.text.trim(),
+          position: index + 1,
+        }
+      }).filter(Boolean),
+    };
+
+    try {
+      const res = await fetch(`/api/admin/master-questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setError("");
+        fetchQuestions();
+      } else {
+        setError("登録、更新に失敗しました");
+      }
+    } catch (error) {
+      setError("登録、更新に失敗しました");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const onDelete = async () => {
+    if (!selectedItem) return;
+
+    setShowModal(false);
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch(`/api/admin/master-questions/${selectedItem?.id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setError("");
+        setQuestions((prev) => prev.filter((q) => q.id !== selectedItem?.id));
+        setCurrentPage(1);
+      } else {
+        setError("削除に失敗しました");
+      }
+    } catch (error) {
+      setError("削除に失敗しました");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading){
+    return <Loading />
+  }
+
   return (
     <>
+      <>
+        {isSubmitting && (
+          <div className="position-relative">
+            <BlockingOverlay />
+          </div>
+        )}
+      </>
+
+      {error && <Alert variant="danger">{error}</Alert>}
       <InputGroup className="mb-3">
         <Form.Control
           placeholder="質問を検索"
@@ -80,27 +198,31 @@ export default function MasterQuestionTab() {
         />
       </InputGroup>
 
+      <div className="d-flex justify-content-end gap-2 mb-2">
+        <Button variant="outline-primary" onClick={() => editMasterQuestion(null)}>新規登録</Button>
+      </div>
+
       {isMobile ? (
         <div>
           {paginated.map((q: Question) => (
-            <Card key={q.id} className="mb-3" bg="light" text="dark">
+            <Card key={q.id} className="mb-3">
               <Card.Body>
                 <div className="d-flex align-items-center mb-2">
-                  <Card.Title className="mb-0">{q.label}</Card.Title>
+                  <Card.Title className="mb-0 text-truncate">{q.label}</Card.Title>
                 </div>
                 <div className="d-flex align-items-center mb-2">
                   {getIconByType(q.type)}
                 </div>
                 <div className="d-flex justify-content-end">
-                  <Button variant="warning" size="sm" className="me-2">編集</Button>
-                  <Button variant="danger" size="sm">削除</Button>
+                  <Button variant="warning" size="sm" className="me-2" onClick={() => editMasterQuestion(q.id)}>編集</Button>
+                  <Button variant="danger" size="sm" onClick={() => deleteMasterQuestion(q)}>削除</Button>
                 </div>
               </Card.Body>
             </Card>
           ))}
         </div>
       ) : (
-        <Table striped bordered hover>
+        <Table striped bordered hover style={{tableLayout: "fixed"}}>
           <thead>
             <tr>
               <th style={{ cursor: "pointer", width: "60%", minWidth: "60%" }} onClick={() => handleSort("label")}>
@@ -115,11 +237,11 @@ export default function MasterQuestionTab() {
           <tbody>
             {paginated.map((q: Question) => (
               <tr key={q.id}>
-                <td>{q.label}</td>
+                <td className="text-truncate">{q.label}</td>
                 <td>{q.type}</td>
                 <td className="text-center">
-                  <Button variant="warning" size="sm" className="me-2">編集</Button>
-                  <Button variant="danger" size="sm">削除</Button>
+                  <Button variant="warning" size="sm" className="me-2" onClick={() => editMasterQuestion(q.id)}>編集</Button>
+                  <Button variant="danger" size="sm" onClick={() => deleteMasterQuestion(q)}>削除</Button>
                 </td>
               </tr>
             ))}
@@ -138,7 +260,8 @@ export default function MasterQuestionTab() {
           </Pagination.Item>
         ))}
       </Pagination>
-
+      <ConfirmModal show={showModal} onClose={() => setShowModal(false)} onConfirm={() => onDelete()} itemName={selectedItem?.label} />
+      <EditQuestionModal show={showEditModal} onHide={hideEditQuestionModal} question={selectedItem!} onSave={(updated) => onSave(updated)} />
     </>
   );
 }

@@ -10,7 +10,7 @@ type Props = {
   onSelect: (question: Question) => void
 }
 
-export default function MasterQuestionModal({ show, onClose, onSelect }: Props) {
+export default function MasterQuestionSelectModal({ show, onClose, onSelect }: Props) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedId, setSelectedId] = useState<Number | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

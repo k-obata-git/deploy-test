@@ -1,9 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Table, Button, Form, InputGroup, Pagination, Card } from 'react-bootstrap';
+import { Table, Button, Form, InputGroup, Pagination, Card, Alert } from 'react-bootstrap';
 import { sortBy } from '../../../../lib/sort';
-import { Template } from '../../../../types/formType';
+import { Option, Template } from '../../../../types/formType';
+import EditTemplateModal from './EditTemplateModal';
+import ConfirmModal from '../ConfirmModal';
+import { BlockingOverlay } from '../BlockingOverlay';
+import Loading from '../Loading';
 
 const PAGE_SIZE = 5;
 const useIsMobile = () => {
@@ -19,7 +23,15 @@ const useIsMobile = () => {
 
 export default function TemplateTab() {
   const isMobile = useIsMobile();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState("");
+
   const [templates, setTemplates] = useState([]);
+  const [selectedItem, setSelectedItem] = useState<Template | null>(null);
+
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<"" | "title" | "description">("");
   const [sortAsc, setSortAsc] = useState(true);
@@ -27,8 +39,11 @@ export default function TemplateTab() {
 
   const fetchTemplates = async () => {
     const res = await fetch('/api/admin/templates');
-    const data = await res.json();
-    setTemplates(data);
+    if(res.ok) {
+      const data = await res.json();
+      setTemplates(data);
+    }
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -38,7 +53,7 @@ export default function TemplateTab() {
   const filtered = templates.filter((t: Template) =>
     t.title.toLowerCase().includes(search.toLowerCase())
   );
-  const sorted = sortBy(filtered, sortKey, sortAsc);
+  const sorted = sortKey ? sortBy(filtered, sortKey, sortAsc) : filtered;
   const paginated = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
   const pageCount = Math.ceil(sorted.length / PAGE_SIZE);
 
@@ -51,8 +66,117 @@ export default function TemplateTab() {
     }
   };
 
+  const editTemplate = (id: number | null) => {
+    const target = filtered.find((t: Template) => t.id === id);
+    if(target) {
+      setSelectedItem(target);
+    } else {
+      const dateNow = new Date();
+      setSelectedItem({
+        id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}`),
+        title: "",
+        description: "",
+        questions: [],
+      })
+    }
+    setShowEditModal(true);
+  };
+
+  const hideEditTemplateModal = () => {
+    setShowEditModal(false);
+    setSelectedItem(null);
+  }
+
+  const deleteTemplate = (t: Template) => {
+    setSelectedItem(t);
+    setShowModal(true);
+  }
+
+  const onSave = async (updated: Template) => {
+    setShowEditModal(false);
+    setIsSubmitting(true);
+
+    const cleanedQuestions = updated.questions?.map((q, index) => ({
+      label: q.label.trim(),
+      type: q.type,
+      position: index + 1,
+      options: q.type === 'text' ? [] : (q.options || []).map((opt: Option, index: number) => {
+        return {
+          text: opt.text.trim(),
+          position: index + 1,
+        }
+      }).filter(Boolean),
+    }));
+
+    const payload = {
+      id: updated.id,
+      title: updated.title.trim(),
+      description: updated.description?.trim().length ? updated.description : null,
+      questions: cleanedQuestions,
+    };
+
+    try {
+      const res = await fetch(`/api/admin/templates`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        setError("");
+        fetchTemplates();
+      } else {
+        setError("登録、更新に失敗しました");
+      }
+    } catch (error) {
+      setError("登録、更新に失敗しました");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const onDelete = async () => {
+    if (!selectedItem) return;
+
+    setShowModal(false);
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch(`/api/admin/templates/${selectedItem?.id}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setError("");
+        setTemplates((prev) => prev.filter((t: Template) => t.id !== selectedItem?.id));
+        setCurrentPage(1);
+      } else {
+        setError("削除に失敗しました");
+      }
+    } catch (error) {
+      setError("削除に失敗しました");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading){
+    return <Loading />
+  }
+
   return (
     <>
+      <>
+        {isSubmitting && (
+          <div className="position-relative">
+            <BlockingOverlay />
+          </div>
+        )}
+      </>
+
+      {error && <Alert variant="danger">{error}</Alert>}
       <InputGroup className="mb-3">
         <Form.Control
           placeholder="テンプレートを検索"
@@ -64,25 +188,29 @@ export default function TemplateTab() {
         />
       </InputGroup>
 
+      <div className="d-flex justify-content-end gap-2 mb-2">
+        <Button variant="outline-primary" onClick={() => editTemplate(null)}>新規登録</Button>
+      </div>
+
       {isMobile ? (
         <div>
           {paginated.map((t: Template) => (
-            <Card key={t.id} className="mb-3" bg="light" text="dark">
+            <Card key={t.id} className="mb-3">
               <Card.Body>
                 <div className="d-flex align-items-center mb-2">
-                  <Card.Title className="mb-0">{t.title}</Card.Title>
+                  <Card.Title className="mb-0 text-truncate">{t.title}</Card.Title>
                 </div>
-                <Card.Subtitle className="mb-2 text-muted">{t.description}</Card.Subtitle>
+                <Card.Subtitle className="mb-2 text-muted text-truncate">{t.description}</Card.Subtitle>
                 <div className="d-flex justify-content-end">
-                  <Button variant="warning" size="sm" className="me-2">編集</Button>
-                  <Button variant="danger" size="sm">削除</Button>
+                  <Button variant="warning" size="sm" className="me-2" onClick={() => editTemplate(t.id)}>編集</Button>
+                  <Button variant="danger" size="sm" onClick={() => deleteTemplate(t)}>削除</Button>
                 </div>
               </Card.Body>
             </Card>
           ))}
         </div>
       ) : (
-        <Table striped bordered hover>
+        <Table striped bordered hover style={{tableLayout: "fixed"}}>
           <thead>
             <tr>
               <th style={{ cursor: "pointer", width: "60%", minWidth: "60%" }} onClick={() => handleSort("title")}>
@@ -97,11 +225,11 @@ export default function TemplateTab() {
           <tbody>
             {paginated.map((t: Template) => (
               <tr key={t.id}>
-                <td>{t.title}</td>
-                <td>{t.description}</td>
+                <td className="text-truncate">{t.title}</td>
+                <td className="text-truncate">{t.description}</td>
                 <td className="text-center">
-                  <Button variant="warning" size="sm" className="me-2">編集</Button>
-                  <Button variant="danger" size="sm">削除</Button>
+                  <Button variant="warning" size="sm" className="me-2" onClick={() => editTemplate(t.id)}>編集</Button>
+                  <Button variant="danger" size="sm" onClick={() => deleteTemplate(t)}>削除</Button>
                 </td>
               </tr>
             ))}
@@ -120,6 +248,8 @@ export default function TemplateTab() {
           </Pagination.Item>
         ))}
       </Pagination>
+      <ConfirmModal show={showModal} onClose={() => setShowModal(false)} onConfirm={() => onDelete()} itemName={selectedItem?.title} />
+      <EditTemplateModal show={showEditModal} onHide={hideEditTemplateModal} template={selectedItem!} onSave={(updated) => onSave(updated)} />
     </>
   );
 }

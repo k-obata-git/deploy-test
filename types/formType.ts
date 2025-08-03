@@ -45,7 +45,7 @@ export type Answer = {
 }
 
 export type Template = {
-  id: string;
+  id: number;
   title: string;
   description?: string;
   userId?: Number,

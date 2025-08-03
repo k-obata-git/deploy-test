@@ -1,36 +1,27 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Table, Button, Form, InputGroup, Pagination, Card, Alert } from 'react-bootstrap';
 import { BsCardList, BsCheckSquare, BsFileFont, BsQuestionCircle, BsUiRadios } from 'react-icons/bs';
 import { sortBy } from '../../../../lib/sort';
 import { Question } from '../../../../types/formType';
+import { BlockingOverlay } from '../BlockingOverlay';
 import EditQuestionModal from './EditQuestionModal';
 import ConfirmModal from '../ConfirmModal';
-import { BlockingOverlay } from '../BlockingOverlay';
-import Loading from '../Loading';
 
-const PAGE_SIZE = 5;
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= 768);
-    handler();
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
-  return isMobile;
-};
+interface Props {
+  isMobile: boolean;
+  questions: Question[];
+  reload: () => void;
+  pageSize: number;
+}
 
-export default function MasterQuestionTab() {
-  const isMobile = useIsMobile();
-  const [loading, setLoading] = useState<boolean>(true);
+export default function MasterQuestionTab({ isMobile, questions, reload, pageSize }: Props){
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState("");
 
-  const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedItem, setSelectedItem] = useState<Question | null>(null);
 
   const [search, setSearch] = useState('');
@@ -38,25 +29,12 @@ export default function MasterQuestionTab() {
   const [sortAsc, setSortAsc] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchQuestions = async () => {
-    const res = await fetch('/api/admin/master-questions');
-    if(res.ok) {
-      const data = await res.json();
-      setQuestions(data);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchQuestions();
-  }, []);
-
   const filtered = questions.filter((q: Question) =>
     q.label.toLowerCase().includes(search.toLowerCase())
   );
   const sorted = sortKey ? sortBy(filtered, sortKey, sortAsc) : filtered;
-  const paginated = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const pageCount = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageCount = Math.ceil(sorted.length / pageSize);
 
   const getIconByType = (type: string) => {
     switch (type) {
@@ -136,7 +114,7 @@ export default function MasterQuestionTab() {
 
       if (res.ok) {
         setError("");
-        fetchQuestions();
+        reload();
       } else {
         setError("登録、更新に失敗しました");
       }
@@ -160,7 +138,7 @@ export default function MasterQuestionTab() {
 
       if (res.ok) {
         setError("");
-        setQuestions((prev) => prev.filter((q) => q.id !== selectedItem?.id));
+        reload();
         setCurrentPage(1);
       } else {
         setError("削除に失敗しました");
@@ -171,10 +149,6 @@ export default function MasterQuestionTab() {
       setIsSubmitting(false);
     }
   };
-
-  if (loading){
-    return <Loading />
-  }
 
   return (
     <>

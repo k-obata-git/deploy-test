@@ -6,17 +6,61 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Tabs, Tab, Container } from 'react-bootstrap';
+import { Question, Template } from '../../../../types/formType';
+import Loading from '@/app/components/Loading';
+
+const PAGE_SIZE = 5;
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    handler();
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+  return isMobile;
+};
 
 export default function AdminPage() {
+  const isMobile = useIsMobile();
   const router = useRouter();
   const { data: session, status } = useSession();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
   const [key, setKey] = useState('questions');
 
   useEffect(() => {
     if(!session?.user.isAdmin) {
       router.replace('/dashboard');
     }
+
+    (async() => {
+      await fetchQuestions();
+      await fetchTemplates();
+      setLoading(false);
+    })()
   }, []);
+
+  const fetchQuestions = async () => {
+    const res = await fetch('/api/admin/master-questions');
+    if(res.ok) {
+      const data = await res.json();
+      setQuestions(data);
+    }
+  };
+
+  const fetchTemplates = async () => {
+    const res = await fetch('/api/admin/templates');
+    if(res.ok) {
+      const data = await res.json();
+      setTemplates(data);
+    }
+  };
+
+  if (loading){
+    return <Loading />
+  }
 
   return (session?.user.isAdmin &&
     <Container>
@@ -24,10 +68,10 @@ export default function AdminPage() {
       <div className="mt-4">
         <Tabs activeKey={key} onSelect={(k) => setKey(k || 'questions')} className="mb-3">
           <Tab eventKey="questions" title="マスタ質問">
-            <MasterQuestionTab />
+            <MasterQuestionTab isMobile={isMobile} questions={questions} reload={fetchQuestions} pageSize={PAGE_SIZE} />
           </Tab>
           <Tab eventKey="templates" title="テンプレート">
-            <TemplateTab />
+            <TemplateTab isMobile={isMobile} templates={templates} reload={fetchTemplates} pageSize={PAGE_SIZE} />
           </Tab>
         </Tabs>
       </div>

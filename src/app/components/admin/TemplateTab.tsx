@@ -1,35 +1,26 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Table, Button, Form, InputGroup, Pagination, Card, Alert } from 'react-bootstrap';
 import { sortBy } from '../../../../lib/sort';
 import { Option, Template } from '../../../../types/formType';
+import { BlockingOverlay } from '../BlockingOverlay';
 import EditTemplateModal from './EditTemplateModal';
 import ConfirmModal from '../ConfirmModal';
-import { BlockingOverlay } from '../BlockingOverlay';
-import Loading from '../Loading';
 
-const PAGE_SIZE = 5;
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= 768);
-    handler();
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
-  return isMobile;
-};
+interface Props {
+  isMobile: boolean;
+  templates: Template[];
+  reload: () => void;
+  pageSize: number;
+}
 
-export default function TemplateTab() {
-  const isMobile = useIsMobile();
-  const [loading, setLoading] = useState<boolean>(true);
+export default function TemplateTab({ isMobile, templates, reload, pageSize }: Props){
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState("");
 
-  const [templates, setTemplates] = useState([]);
   const [selectedItem, setSelectedItem] = useState<Template | null>(null);
 
   const [search, setSearch] = useState('');
@@ -37,25 +28,12 @@ export default function TemplateTab() {
   const [sortAsc, setSortAsc] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const fetchTemplates = async () => {
-    const res = await fetch('/api/admin/templates');
-    if(res.ok) {
-      const data = await res.json();
-      setTemplates(data);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
   const filtered = templates.filter((t: Template) =>
     t.title.toLowerCase().includes(search.toLowerCase())
   );
   const sorted = sortKey ? sortBy(filtered, sortKey, sortAsc) : filtered;
-  const paginated = sorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
-  const pageCount = Math.ceil(sorted.length / PAGE_SIZE);
+  const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const pageCount = Math.ceil(sorted.length / pageSize);
 
   const handleSort = (key: "" | "title" | "description") => {
     if (sortKey === key) {
@@ -126,7 +104,7 @@ export default function TemplateTab() {
 
       if (res.ok) {
         setError("");
-        fetchTemplates();
+        reload();
       } else {
         setError("登録、更新に失敗しました");
       }
@@ -150,7 +128,7 @@ export default function TemplateTab() {
 
       if (res.ok) {
         setError("");
-        setTemplates((prev) => prev.filter((t: Template) => t.id !== selectedItem?.id));
+        reload();
         setCurrentPage(1);
       } else {
         setError("削除に失敗しました");
@@ -161,10 +139,6 @@ export default function TemplateTab() {
       setIsSubmitting(false);
     }
   };
-
-  if (loading){
-    return <Loading />
-  }
 
   return (
     <>

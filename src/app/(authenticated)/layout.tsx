@@ -2,9 +2,10 @@
 
 import { signOut, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Container, Navbar, NavbarBrand, Nav, Dropdown } from 'react-bootstrap';
 import BreadcrumbsAuto from '../components/BreadcrumbsAuto';
+import { BlockingOverlay } from '../components/BlockingOverlay';
 
 export default function AuthenticatedLayout({
   children,
@@ -13,6 +14,7 @@ export default function AuthenticatedLayout({
 }>) {
   const router = useRouter();
   const { data: session, status } = useSession();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if(status !== "authenticated" && status !== "loading") {
@@ -28,15 +30,25 @@ export default function AuthenticatedLayout({
     }
   }, [status]);
 
-  const logout = () => {
+  const logout = async() => {
+    setIsSubmitting(true);
     if(status === "authenticated") {
-      signOut({ callbackUrl: "/login" })
+      await signOut({ callbackUrl: "/login" });
     }
+    setIsSubmitting(false);
   }
 
   if(status === "authenticated") {
     return (
       <>
+        <>
+          {isSubmitting && (
+            <div className="position-relative">
+              <BlockingOverlay />
+            </div>
+          )}
+        </>
+
         <Navbar bg="dark" data-bs-theme="dark">
           <Container>
             <NavbarBrand>QuickForm</NavbarBrand>

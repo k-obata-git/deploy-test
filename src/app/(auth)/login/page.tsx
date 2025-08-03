@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { BlockingOverlay } from '@/app/components/BlockingOverlay';
+import Loading from '@/app/components/Loading';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState<boolean>(true);
   const [validated, setValidated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -20,6 +22,7 @@ export default function LoginPage() {
     if(status == "authenticated" && session?.user.id) {
       router.push('/dashboard');
     }
+    setLoading(false);
   }, [status]);
 
   const handleLogin = async(event: any) => {
@@ -55,6 +58,10 @@ export default function LoginPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (loading){
+    return <Loading />
+  }
 
   return (
     <>

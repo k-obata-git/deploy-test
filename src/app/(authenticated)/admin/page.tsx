@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Tabs, Tab, Container } from 'react-bootstrap';
 import { Question, Template } from '../../../../types/formType';
-import Loading from '@/app/components/Loading';
+import BlockingOverlay from '@/app/components/BlockingOverlay';
 
 const PAGE_SIZE = 5;
 const useIsMobile = () => {
@@ -58,23 +58,28 @@ export default function AdminPage() {
     }
   };
 
-  if (loading){
-    return <Loading />
-  }
-
   return (session?.user.isAdmin &&
-    <Container>
-      <h2>管理者ダッシュボード</h2>
-      <div className="mt-4">
-        <Tabs activeKey={key} onSelect={(k) => setKey(k || 'questions')} className="mb-3">
-          <Tab eventKey="questions" title="マスタ質問">
-            <MasterQuestionTab isMobile={isMobile} questions={questions} reload={fetchQuestions} pageSize={PAGE_SIZE} />
-          </Tab>
-          <Tab eventKey="templates" title="テンプレート">
-            <TemplateTab isMobile={isMobile} templates={templates} reload={fetchTemplates} pageSize={PAGE_SIZE} />
-          </Tab>
-        </Tabs>
-      </div>
-    </Container>
+    <>
+      <>
+        {loading && (
+          <div className="position-relative">
+            <BlockingOverlay type={"loading"} />
+          </div>
+        )}
+      </>
+      <Container>
+        <h2>管理者ダッシュボード</h2>
+        <div className="mt-4">
+          <Tabs activeKey={key} onSelect={(k) => setKey(k || 'questions')} className="mb-3">
+            <Tab eventKey="questions" title="マスタ質問">
+              <MasterQuestionTab isMobile={isMobile} questions={questions} reload={fetchQuestions} pageSize={PAGE_SIZE} />
+            </Tab>
+            <Tab eventKey="templates" title="テンプレート">
+              <TemplateTab isMobile={isMobile} templates={templates} reload={fetchTemplates} pageSize={PAGE_SIZE} />
+            </Tab>
+          </Tabs>
+        </div>
+      </Container>
+    </>
   );
 }

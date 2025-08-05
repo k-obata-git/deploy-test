@@ -5,9 +5,9 @@ import { Table, Button, Form, InputGroup, Pagination, Card, Alert } from 'react-
 import { BsCardList, BsCheckSquare, BsFileFont, BsQuestionCircle, BsUiRadios } from 'react-icons/bs';
 import { sortBy } from '../../../../lib/sort';
 import { Question } from '../../../../types/formType';
-import { BlockingOverlay } from '../BlockingOverlay';
 import EditQuestionModal from './EditQuestionModal';
 import ConfirmModal from '../ConfirmModal';
+import BlockingOverlay from '../BlockingOverlay';
 
 interface Props {
   isMobile: boolean;
@@ -152,14 +152,11 @@ export default function MasterQuestionTab({ isMobile, questions, reload, pageSiz
 
   return (
     <>
-      <>
-        {isSubmitting && (
-          <div className="position-relative">
-            <BlockingOverlay />
-          </div>
-        )}
-      </>
-
+      {isSubmitting && (
+        <div className="position-relative">
+          <BlockingOverlay type={"processing"} />
+        </div>
+      )}
       {error && <Alert variant="danger">{error}</Alert>}
       <InputGroup className="mb-3">
         <Form.Control

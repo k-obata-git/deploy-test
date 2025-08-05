@@ -4,9 +4,9 @@ import { useState } from 'react';
 import { Table, Button, Form, InputGroup, Pagination, Card, Alert } from 'react-bootstrap';
 import { sortBy } from '../../../../lib/sort';
 import { Option, Template } from '../../../../types/formType';
-import { BlockingOverlay } from '../BlockingOverlay';
 import EditTemplateModal from './EditTemplateModal';
 import ConfirmModal from '../ConfirmModal';
+import BlockingOverlay from '../BlockingOverlay';
 
 interface Props {
   isMobile: boolean;
@@ -142,14 +142,11 @@ export default function TemplateTab({ isMobile, templates, reload, pageSize }: P
 
   return (
     <>
-      <>
-        {isSubmitting && (
-          <div className="position-relative">
-            <BlockingOverlay />
-          </div>
-        )}
-      </>
-
+      {isSubmitting && (
+        <div className="position-relative">
+          <BlockingOverlay type={"processing"} />
+        </div>
+      )}
       {error && <Alert variant="danger">{error}</Alert>}
       <InputGroup className="mb-3">
         <Form.Control

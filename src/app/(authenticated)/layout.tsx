@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Container, Navbar, NavbarBrand, Nav, Dropdown } from 'react-bootstrap';
 import BreadcrumbsAuto from '../components/BreadcrumbsAuto';
-import { BlockingOverlay } from '../components/BlockingOverlay';
+import BlockingOverlay from '../components/BlockingOverlay';
 
 export default function AuthenticatedLayout({
   children,
@@ -41,14 +41,11 @@ export default function AuthenticatedLayout({
   if(status === "authenticated") {
     return (
       <>
-        <>
-          {isSubmitting && (
-            <div className="position-relative">
-              <BlockingOverlay />
-            </div>
-          )}
-        </>
-
+        {isSubmitting && (
+          <div className="position-relative">
+            <BlockingOverlay type={"processing"} />
+          </div>
+        )}
         <Navbar bg="dark" data-bs-theme="dark">
           <Container>
             <NavbarBrand>QuickForm</NavbarBrand>

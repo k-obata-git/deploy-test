@@ -4,8 +4,7 @@ import { Container, Button, Card, Form, Alert } from 'react-bootstrap';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
-import { BlockingOverlay } from '@/app/components/BlockingOverlay';
-import Loading from '@/app/components/Loading';
+import BlockingOverlay from '@/app/components/BlockingOverlay';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,43 +34,37 @@ export default function LoginPage() {
     }
 
     setIsSubmitting(true);
-
-    try {
-      await signIn("credentials", {
-        redirect: false,
-        username,
-        password,
-      }).then(res => {
-        if (res?.error) {
-          setValidated(false);
-          setError('入力内容をご確認ください。');
-        } else {
-          setUsername('');
-          setPassword('');
-          setError('')
-          router.push('/dashboard');
-        }
-      })
-    } catch (err) {
-      console.log(err);
-    } finally {
+    signIn("credentials", {
+      redirect: false,
+      username,
+      password,
+    }).then(res => {
+      if (res?.error) {
+        setValidated(false);
+        setError('入力内容をご確認ください。');
+      } else {
+        setUsername('');
+        setPassword('');
+        setError('')
+        router.push('/dashboard');
+      }
+    }).finally(() => {
       setIsSubmitting(false);
-    }
-  };
-
-  if (loading){
-    return <Loading />
+    });
   }
 
   return (
     <>
-      <>
-        {isSubmitting && (
-          <div className="position-relative">
-            <BlockingOverlay />
-          </div>
-        )}
-      </>
+      {loading && (
+        <div className="position-relative">
+          <BlockingOverlay type={"loading"} />
+        </div>
+      )}
+      {isSubmitting && (
+        <div className="position-relative">
+          <BlockingOverlay type={"processing"} />
+        </div>
+      )}
       <Container className="d-flex flex-column align-items-center justify-content-center" style={{ maxWidth: 1080 }}>
         <Card className="w-100 shadow-sm p-4 text-center bg-white">
           <Form className="text-start mt-4" noValidate validated={validated} onSubmit={handleLogin}>

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, Form, Button, Alert, ListGroup } from 'react-bootstrap';
 import { Answer, FormType } from '../../../types/formType';
-import { BlockingOverlay } from './BlockingOverlay';
+import BlockingOverlay from './BlockingOverlay';
 
 type Prop = {
   id?: number,
@@ -40,25 +40,28 @@ export default function FormView({preview, form}: Prop) {
     setValues((prev) => ({ ...prev, [key]: item }))
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!form) return;
 
-    setIsSubmitting(true);
     const items = Object.values(values).filter(val => val.value?.trim());
-    const res = await fetch(`/api/response/${form.id}`, {
+
+    setIsSubmitting(true);
+    fetch(`/api/response/${form.id}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ items }),
+    }).then((res) => {
+      if(res.ok) {
+        setSubmitted(true);
+      } else {
+        setError('送信に失敗しました');
+      }
+    }).finally(() => {
+      setIsSubmitting(false);
     });
-
-    setIsSubmitting(false);
-
-    if (res.ok) {
-      setSubmitted(true);
-    } else {
-      setError('送信に失敗しました');
-    }
-  };
+  }
 
   if (submitted) {
     return (
@@ -68,14 +71,12 @@ export default function FormView({preview, form}: Prop) {
 
   return (
     <>
-      <>
-        {isSubmitting && (
-          <div className="position-relative">
-            <BlockingOverlay />
-          </div>
-        )}
-      </>
-
+      {isSubmitting && (
+        <div className="position-relative">
+          <BlockingOverlay type={"processing"} />
+        </div>
+      )}
+      {error && <Alert variant="danger">{error}</Alert>}
       <Card className="my-4">
         <Card.Body>
           <h5 className="mb-3 text-muted text-break" style={{width: "100%"}}>{form?.title}</h5>
@@ -158,9 +159,6 @@ export default function FormView({preview, form}: Prop) {
             </Card.Body>
           </Card>
         ))}
-
-        {error && <Alert variant="danger">{error}</Alert>}
-
         <div className="text-end" hidden={preview}>
           <Button onClick={handleSubmit}>送信</Button>
         </div>

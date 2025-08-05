@@ -2,25 +2,32 @@
 
 import { Container, Spinner } from 'react-bootstrap';
 
-export const BlockingOverlay = () => (
-  <div
-    style={{
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      width: '100vw',
-      height: '100vh',
-      backgroundColor: 'rgba(255, 255, 255, 0.6)',
-      zIndex: 9999,
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-    }}
-  >
+interface Props {
+  type: "loading" | "processing";
+  message?: string;
+}
 
-    <Container className="d-flex flex-column align-items-center justify-content-center">
-      <Spinner animation="border" variant="primary" />
-      <p>処理中</p>
-    </Container>
-  </div>
-);
+export default function BlockingOverlay({ type, message }: Props){
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        backgroundColor: 'rgba(255, 255, 255, 0.6)',
+        zIndex: 9999,
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+
+      <Container className="d-flex flex-column align-items-center justify-content-center">
+        <Spinner animation="border" variant="primary" />
+        <p>{message ? message : type === "loading" ? "読込中" : "処理中"}</p>
+      </Container>
+    </div>
+  )
+}

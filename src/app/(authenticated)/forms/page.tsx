@@ -2,18 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Button, Container, Row, Col, SplitButton, Dropdown, Alert } from 'react-bootstrap';
-import ConfirmModal from '@/app/components/ConfirmModal';
-import Loading from '@/app/components/Loading';
+import { Card, Button, Row, Col, SplitButton, Dropdown, Alert } from 'react-bootstrap';
 import { FormType, Template } from '../../../../types/formType';
-import { BlockingOverlay } from '@/app/components/BlockingOverlay';
+import ConfirmModal from '@/app/components/ConfirmModal';
 import ShareActionsModal from '@/app/components/ShareActionsModal';
 import TemplateSelectModal from '@/app/components/TemplateSelectModal';
+import BlockingOverlay from '@/app/components/BlockingOverlay';
 
 export default function FormListPage() {
   const router = useRouter();
   const [forms, setForms] = useState<FormType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [selectedForm, setSelectedForm] = useState<FormType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -22,40 +21,25 @@ export default function FormListPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    getForms();
+    setLoading(true);
+    (async() => {
+      await getForms();
+      setLoading(false);
+    })()
   }, []);
 
-  const handleDeleteConfirm = async() => {
-    if (!selectedForm) return;
-
-    setShowModal(false);
-    setIsSubmitting(true);
-
-    try {
-      const res = await fetch(`/api/forms/${selectedForm.id}`, {
-        method: 'DELETE',
-      });
-
+  const getForms = () => {
+    fetch('/api/forms', {
+      method: 'GET',
+    }).then((res) => {
       if(res.ok) {
-        getForms();
-        setError("");
+        return res.json();
       } else {
-        setError("削除に失敗しました");
+        setError("取得に失敗しました");
       }
-    } catch (err) {
-
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const getForms = async() => {
-    fetch('/api/forms')
-      .then((res) => res.json())
-      .then((data) => {
-        setForms(data);
-        setLoading(false);
-      });
+    }).then((data) => {
+      setForms(data);
+    });
   }
 
   const handleTemplateSelect = (template: Template) => {
@@ -63,19 +47,37 @@ export default function FormListPage() {
     router.push(`/forms/new?templateId=${template.id}`)
   };
 
-  if (loading){
-    return <Loading />
+  const handleDeleteConfirm = () => {
+    if (!selectedForm) return;
+
+    setShowModal(false);
+    setIsSubmitting(true);
+    fetch(`/api/forms/${selectedForm.id}`, {
+      method: 'DELETE',
+    }).then((res) => {
+      if(res.ok) {
+        getForms();
+        setError("");
+      } else {
+        setError("削除に失敗しました");
+      }
+    }).finally(() => {
+      setIsSubmitting(false);
+    })
   }
 
   return (
-    <Container className="">
-      <>
-        {isSubmitting && (
-          <div className="position-relative">
-            <BlockingOverlay />
-          </div>
-        )}
-      </>
+    <>
+      {loading && (
+        <div className="position-relative">
+          <BlockingOverlay type={"loading"} />
+        </div>
+      )}
+      {isSubmitting && (
+        <div className="position-relative">
+          <BlockingOverlay type={"processing"} />
+        </div>
+      )}
       <h2>フォーム一覧</h2>
       <div className="d-flex justify-content-end mb-4">
         <SplitButton variant="outline-primary" title="新規フォーム作成" id="add-question-split" onClick={() => router.push('/forms/new')}>
@@ -85,10 +87,10 @@ export default function FormListPage() {
       {error && <Alert variant="danger">{error}</Alert>}
 
       <Row>
-        {forms.length === 0 ? (
+        {forms?.length === 0 ? (
           <p>まだフォームが作成されていません。</p>
         ) : (
-          forms.map((form) => (
+          forms?.map((form) => (
             <Col key={form.id} lg={6} xl={4} className="mb-4">
               <Card>
                 <Card.Body>
@@ -119,6 +121,6 @@ export default function FormListPage() {
       <ConfirmModal show={showModal} onClose={() => setShowModal(false)} onConfirm={handleDeleteConfirm} itemName={selectedForm?.title} />
       <ShareActionsModal show={showShareActionsModal} onHide={() => setShowShareActionsModal(false)} formUrl={`${new URL(window.location.href).origin}/public/${selectedForm?.id.toString()}`} />
       <TemplateSelectModal show={showTemplateModal} onClose={() => setShowTemplateModal(false)} onSelect={handleTemplateSelect} />
-    </Container>
+    </>
   );
 }

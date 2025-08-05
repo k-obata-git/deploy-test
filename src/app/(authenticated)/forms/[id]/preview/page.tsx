@@ -2,34 +2,38 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import Loading from '@/app/components/Loading';
-import FormView from '@/app/components/FormView';
 import { FormType } from '../../../../../../types/formType';
+import FormView from '@/app/components/FormView';
+import BlockingOverlay from '@/app/components/BlockingOverlay';
 
 export default function FormPreviewPage() {
   const { id } = useParams();
   const [form, setForm] = useState<FormType | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
-      const res = await fetch(`/api/forms/${id}`)
-      if (res.ok) {
-        const data = await res.json();
-        setForm(data);
+    setLoading(true);
+    fetch(`/api/forms/${id}`, {
+      method: 'GET',
+    }).then((res) => {
+      if(res.ok) {
+        return res.json();
       }
+    }).then((data) => {
+      setForm(data);
+    }).finally(() => {
       setLoading(false);
-    };
-    load();
+    });
   }, [id]);
-
-  if (loading || !form){
-    return <Loading />
-  }
 
   return (
     <>
-      <FormView preview={true} form={form} />
+      {loading && (
+        <div className="position-relative">
+          <BlockingOverlay type={"loading"} />
+        </div>
+      )}
+      <FormView preview={true} form={form!} />
     </>
   );
 }

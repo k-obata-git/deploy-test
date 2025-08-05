@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Container, Card } from 'react-bootstrap';
-import Loading from '@/app/components/Loading';
-import FormView from '@/app/components/FormView';
 import { FormType } from '../../../../../types/formType';
+import FormView from '@/app/components/FormView';
+import BlockingOverlay from '@/app/components/BlockingOverlay';
 
 export default function PublicFormPage() {
   const { id } = useParams();
@@ -13,32 +13,40 @@ export default function PublicFormPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
-      const res = await fetch(`/api/public/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setForm(data);
+    setLoading(true);
+    fetch(`/api/public/${id}`, {
+      method: 'GET',
+    }).then((res) => {
+      if(res.ok) {
+        return res.json();
       }
+    }).then((data) => {
+      setForm(data);
+    }).finally(() => {
       setLoading(false);
-    };
-    load();
+    });
   }, [id]);
 
-  if (loading){
-    return <Loading />
-  }
-
-  if (!form) {
+  if(loading) {
     return (
-      <Container>
-        <Card className="p-4">
-          <p style={{textAlign: "center", margin: "0"}}>このフォームは存在しないか、非公開です。</p>
-        </Card>
-      </Container>
+      <div className="position-relative">
+        <BlockingOverlay type={"loading"} />
+      </div>
     )
   }
 
   return (
-    <FormView preview={false} form={form} />
+    <>
+      {form && (
+        <FormView preview={false} form={form!} />
+      )}
+      {!form && (
+        <Container>
+          <Card className="p-4">
+            <p style={{textAlign: "center", margin: "0"}}>このフォームは存在しないか、非公開です。</p>
+          </Card>
+        </Container>
+      )}
+    </>
   )
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Modal, Button, Form, ListGroup } from 'react-bootstrap'
 import { Question } from '../../../types/formType'
+import BlockingOverlay from './BlockingOverlay'
 
 type Props = {
   show: boolean
@@ -13,18 +14,25 @@ type Props = {
 export default function MasterQuestionSelectModal({ show, onClose, onSelect }: Props) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedId, setSelectedId] = useState<Number | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     if (show) {
       setSelectedId(null);
       setQuestions([]);
-      fetch('/api/master-questions')
-        .then(res => res.json())
-        .then(setQuestions)
-        .then(() => setLoading(false))
-    } else {
+
       setLoading(true);
+      fetch('/api/master-questions', {
+        method: 'GET',
+      }).then((res) => {
+        if(res.ok) {
+          return res.json();
+        }
+      }).then((data) => {
+        setQuestions(data);
+      }).finally(() => {
+        setLoading(false);
+      });
     }
   }, [show])
 
@@ -37,40 +45,48 @@ export default function MasterQuestionSelectModal({ show, onClose, onSelect }: P
     }
   }
 
-  return (!loading &&
-    <Modal show={show} onHide={onClose} centered>
-      <Modal.Header closeButton>
-        <Modal.Title>定型質問を追加</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form.Select
-          value={selectedId?.toString()}
-          onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
-        >
-          <option value="">選択してください</option>
-          {questions.map((q) => (
-            <option key={q.id} value={q.id}>
-              {q.label}（{q.type}）
-            </option>
-          ))}
-        </Form.Select>
+  return (
+    <>
+      {loading && (
+        <div className="position-relative">
+          <BlockingOverlay type="loading" />
+        </div>
+      )}
+      <Modal show={show} onHide={onClose} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>定型質問を追加</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Select
+            value={selectedId?.toString()}
+            onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
+            hidden={!questions}
+          >
+            <option value="">選択してください</option>
+            {questions?.map((q) => (
+              <option key={q.id} value={q.id}>
+                {q.label}（{q.type}）
+              </option>
+            ))}
+          </Form.Select>
 
-        {selectedId && (
-          <div className="mt-3">
-            <strong>選択中:</strong>{' '}
-            {questions.find((q) => Number(q.id) === selectedId)?.label}
-            <ListGroup className="mt-2">
-              {(questions.find((q) => Number(q.id) === selectedId)?.options ?? []).map(opt => (
-                <ListGroup.Item key={opt.id}>{opt.text}</ListGroup.Item>
-              ))}
-            </ListGroup>
-          </div>
-        )}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>閉じる</Button>
-        <Button variant="primary" onClick={handleAdd} disabled={!selectedId}>追加</Button>
-      </Modal.Footer>
-    </Modal>
+          {selectedId && (
+            <div className="mt-3">
+              <strong>選択中:</strong>{' '}
+              {questions.find((q) => Number(q.id) === selectedId)?.label}
+              <ListGroup className="mt-2">
+                {(questions.find((q) => Number(q.id) === selectedId)?.options ?? []).map(opt => (
+                  <ListGroup.Item key={opt.id}>{opt.text}</ListGroup.Item>
+                ))}
+              </ListGroup>
+            </div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={onClose}>閉じる</Button>
+          <Button variant="primary" onClick={handleAdd} disabled={!selectedId}>追加</Button>
+        </Modal.Footer>
+      </Modal>
+    </>
   )
 }

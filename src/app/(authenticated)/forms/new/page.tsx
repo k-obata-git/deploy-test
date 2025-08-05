@@ -11,16 +11,18 @@ export default function NewFormPage() {
   const [template, setTemplate] = useState<Template | null>(null);
 
   useEffect(() => {
-    const fetchForm = async () => {
-      const res = await fetch(`/api/templates/${templateId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTemplate(data);
-      }
-    };
-
     if (templateId) {
-      fetchForm();
+      fetch(`/api/templates/${templateId}`, {
+        method: 'GET',
+      }).then((res) => {
+        if(res.ok) {
+          return res.json();
+        }
+      }).then((data) => {
+        setTemplate(data);
+      }).finally(() => {
+
+      });
     }
   }, [templateId])
 

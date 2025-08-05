@@ -6,11 +6,10 @@ import { useParams, useRouter } from 'next/navigation';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { restrictToParentElement } from '@dnd-kit/modifiers';
-import Loading from './Loading';
 import { Question, Option, QuestionType, Template } from '../../../types/formType';
-import { BlockingOverlay } from './BlockingOverlay';
 import MasterQuestionSelectModal from './MasterQuestionSelectModal';
 import SortableQuestionCard from './SortableQuestionCard';
+import BlockingOverlay from './BlockingOverlay';
 
 type Props = {
   formTemplate?: Template | null,
@@ -23,12 +22,13 @@ export default function FormEditor({ formTemplate }: Props) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [loading, setLoading] = useState<boolean>(!!id);
+  const [loading, setLoading] = useState<boolean>(false);
   const [validated, setValidated] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [error, setError] = useState('');
+  const [isRenderDataReady, setIsRenderDataReady] = useState(false);
 
   // ドラッグアンドドロップ用
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,50 +44,91 @@ export default function FormEditor({ formTemplate }: Props) {
   };
 
   useEffect(() => {
+    if (!id && !formTemplate) {
+      return;
+    }
+
+    setLoading(true);
     if(formTemplate) {
-      setTitle(formTemplate.title);
-      setDescription(formTemplate.description ?? "");
-      const questions = formTemplate.questions.map((q, i) => {
-        const dateNow = new Date();
-        const options = q.options.map((opt: Option, j: number) => {
-          return {
-            id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}${j}`),
-            text: opt.text,
-            position: opt.position
-          }
-        })
-
-        return {
-          id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}`),
-          label: q.label,
-          type: q.type,
-          position: q.position,
-          options: options,
+      setFormDate(formTemplate.title, formTemplate.description, createTemplateQuestions(formTemplate), false);
+      setIsRenderDataReady(true);
+    } else {
+      fetch(`/api/forms/${id}`, {
+        method: 'GET',
+      }).then((res) => {
+        if(res.ok) {
+          return res.json();
+        } else {
+          setError("取得に失敗しました");
         }
-      })
-      setQuestions(questions || []);
-      return;
+      }).then((data) => {
+        setError("");
+        setFormDate(data?.title, data?.description, data?.questions, data?.isPublic);
+      }).finally(() => {
+        setIsRenderDataReady(true);
+      });
     }
-
-    if (!id) {
-      return;
-    }
-
-    const fetchForm = async () => {
-      const res = await fetch(`/api/forms/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTitle(data.title);
-        setDescription(data.description ?? "");
-        setQuestions(data.questions || []);
-        setIsPublic(data.isPublic);
-      }
-      setLoading(false);
-    };
-    fetchForm();
   }, [id, formTemplate]);
 
-  const handleSave = async (event: any) => {
+  useEffect(() => {
+    if(isRenderDataReady) {
+      setLoading(false);
+    }
+  }, [isRenderDataReady])
+
+  const createTemplateQuestions = (formTemplate: Template) => {
+    const dateNow = new Date();
+    return formTemplate.questions.map((q, i) => {
+      const options = q.options.map((opt: Option, j: number) => {
+        return {
+          id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}${j}`),
+          text: opt.text,
+          position: opt.position
+        }
+      })
+
+      return {
+        id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}${i}`),
+        label: q.label,
+        type: q.type,
+        position: q.position,
+        options: options,
+      }
+    })
+  }
+
+  const setFormDate = (title: string, description: string | undefined, questions: Question[], isPublic: boolean) => {
+    setTitle(title);
+    setDescription(description ?? "");
+    setQuestions(questions || []);
+    setIsPublic(isPublic);
+  }
+
+  const handleToggle = () => {
+    const nextValue = !isPublic;
+    setIsPublic(nextValue);
+
+    setIsSubmitting(true);
+    fetch(`/api/forms/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ isPublic: nextValue }),
+    }).then((res) => {
+      if(res.ok) {
+        setError("");
+      } else {
+        // 状態を元に戻す
+        setIsPublic(!nextValue);
+        setError("更新に失敗しました");
+      }
+    }).finally(() => {
+      setIsSubmitting(false);
+    })
+  }
+
+  const handleSave = async(event: any) => {
     event.preventDefault();
     const form = event.currentTarget;
     if (form.checkValidity() === false) {
@@ -96,9 +137,33 @@ export default function FormEditor({ formTemplate }: Props) {
       return;
     }
 
-    setIsSubmitting(true);
+    const payload = {
+      id: id ?? null,
+      title: title.trim(),
+      description: description?.trim().length ? description : null,
+      questions: createRequestQuestion(),
+    };
 
-    const cleanedQuestions = questions.map((q, index) => ({
+    setIsSubmitting(true);
+    fetch('/api/forms', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    }).then((res) => {
+      if(res.ok) {
+        router.push(`/forms`);
+      } else {
+        setError("登録、更新に失敗しました");
+      }
+    }).finally(() => {
+      setIsSubmitting(false);
+    })
+  };
+
+  const createRequestQuestion = () => {
+    return questions.map((q, index) => ({
       id: q.id,
       label: q.label.trim(),
       type: q.type,
@@ -110,35 +175,18 @@ export default function FormEditor({ formTemplate }: Props) {
           position: index + 1,
         }
       }).filter(Boolean),
-    }));
+    }))
+  }
 
-    const payload = {
-      id: id ?? null,
-      title: title.trim(),
-      description: description?.trim().length ? description : null,
-      questions: cleanedQuestions,
+  const createNewQuestion = (label: string, type: QuestionType, options: Option[] | undefined) => {
+    const dateNow = new Date();
+    return {
+      id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}`),
+      label: label,
+      type: type,
+      options: options,
     };
-
-    try {
-      const res = await fetch('/api/forms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if(res.ok) {
-        router.push(`/forms`);
-      }else {
-        setError("登録、更新に失敗しました");
-      }
-    } catch (err) {
-
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  }
 
   const moveQuestion = (index: number, direction: 'up' | 'down') => {
     const newQuestions = [...questions];
@@ -176,61 +224,24 @@ export default function FormEditor({ formTemplate }: Props) {
     );
   };
 
-  const handleToggle = async () => {
-    const nextValue = !isPublic;
-    setIsPublic(nextValue);
-    setIsSubmitting(true);
-    try {
-      const res = await fetch(`/api/forms/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPublic: nextValue }),
-      });
-
-      if(res.ok) {
-        setError("");
-      } else {
-        // 状態を元に戻す
-        setIsPublic(!nextValue);
-        setError("更新に失敗しました");
-      }
-    } catch (err) {
-      // 状態を元に戻す
-      setIsPublic(!nextValue);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const onAdd = (q: Question) => {
     setQuestions([...questions, createNewQuestion(q.label, q.type, q.options)]);
   }
 
-  const createNewQuestion = (label: string, type: QuestionType, options: Option[] | undefined) => {
-    const dateNow = new Date();
-    return {
-      id: Number(`${dateNow.getMinutes()}${dateNow.getSeconds()}${dateNow.getMilliseconds()}`),
-      label: label,
-      type: type,
-      options: options,
-    };
-  }
-
-  if (loading){
-    return <Loading />
-  }
-
   return (
     <>
-      <>
-        {isSubmitting && (
-          <div className="position-relative">
-            <BlockingOverlay />
-          </div>
-        )}
-      </>
+      {loading && (
+        <div className="position-relative">
+          <BlockingOverlay type={"loading"} />
+        </div>
+      )}
+      {isSubmitting && (
+        <div className="position-relative">
+          <BlockingOverlay type={"processing"} />
+        </div>
+      )}
       {error && <Alert variant="danger">{error}</Alert>}
-      <Form noValidate validated={validated} onSubmit={handleSave}>
+      <Form noValidate validated={validated} onSubmit={handleSave} hidden={!!(id && !title)}>
         <>
           {id && (
             <Form.Group className="mb-3 d-flex align-items-center justify-content-end">
@@ -240,8 +251,7 @@ export default function FormEditor({ formTemplate }: Props) {
               <Form.Check
                 type="switch"
                 id="isPublic-switch"
-                checked={isPublic}
-                disabled={loading}
+                checked={isPublic ?? false}
                 onChange={handleToggle}
               />
             </Form.Group>
@@ -250,13 +260,13 @@ export default function FormEditor({ formTemplate }: Props) {
 
         <Form.Group className="mb-3" >
           <Form.Label>フォームタイトル</Form.Label>
-          <Form.Control value={title} onChange={(e) => setTitle(e.target.value)} required />
+          <Form.Control value={title ?? ""} onChange={(e) => setTitle(e.target.value)} required />
         </Form.Group>
 
         <Form.Group className="mb-4">
           <Form.Label>フォーム説明</Form.Label>
           <Form.Control
-            value={description}
+            value={description ?? ""}
             onChange={(e) => setDescription(e.target.value)}
           />
         </Form.Group>

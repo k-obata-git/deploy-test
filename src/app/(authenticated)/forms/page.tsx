@@ -22,10 +22,7 @@ export default function FormListPage() {
 
   useEffect(() => {
     setLoading(true);
-    (async() => {
-      await getForms();
-      setLoading(false);
-    })()
+    getForms();
   }, []);
 
   const getForms = () => {
@@ -39,6 +36,8 @@ export default function FormListPage() {
       }
     }).then((data) => {
       setForms(data);
+    }).finally(() => {
+      setLoading(false);
     });
   }
 

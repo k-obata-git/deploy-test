@@ -1,10 +1,12 @@
 'use client';
 
-import { Modal, Button, ListGroup, Row, Col } from 'react-bootstrap';
+import { Modal, Button, ListGroup, Row, Col, Pagination } from 'react-bootstrap';
 import { useEffect, useState } from 'react';
-import { Template } from '../../../types/formType';
 import { BsFillCheckCircleFill } from 'react-icons/bs';
+import { Template } from '../../../types/formType';
+import { PAGINATION } from '../../../constants/pagination';
 import BlockingOverlay from './BlockingOverlay';
+import Paginate from './Paginate';
 
 type TemplateSelectModalProps = {
   show: boolean;
@@ -20,11 +22,16 @@ export default function TemplateSelectModal({
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const paginated = templates?.slice((currentPage - 1) * PAGINATION.ITEMS_PER_PAGE, currentPage * PAGINATION.ITEMS_PER_PAGE);
+  const pageCount = Math.ceil(templates?.length / PAGINATION.ITEMS_PER_PAGE);
 
   useEffect(() => {
     if (show) {
       setSelectedTemplate(null);
       setTemplates([]);
+      setCurrentPage(1);
 
       setLoading(true);
       fetch('/api/templates', {
@@ -64,7 +71,7 @@ export default function TemplateSelectModal({
             {templates?.length === 0 ? (
               <p className="text-center m-0">未登録</p>
             ) : (
-              templates?.map((tpl) => (
+              paginated?.map((tpl) => (
                 <ListGroup.Item key={tpl.id} onClick={() => setSelectedTemplate(tpl)} action>
                   <Row>
                     <Col xs={1} className="m-auto">
@@ -79,14 +86,15 @@ export default function TemplateSelectModal({
               ))
             )}
           </ListGroup>
+
+          <div className="d-flex justify-content-center m-0 pt-3">
+            <Paginate currentPage={currentPage} onPageChange={setCurrentPage} totalPages={pageCount}></Paginate>
+          </div>
+
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={onClose}>
-            キャンセル
-          </Button>
-          <Button variant="primary" onClick={handleSelect} disabled={!selectedTemplate}>
-            このテンプレートを使用
-          </Button>
+          <Button variant="secondary" onClick={onClose}>キャンセル</Button>
+          <Button variant="primary" onClick={handleSelect} disabled={!selectedTemplate}>このテンプレートを使用</Button>
         </Modal.Footer>
       </Modal>
     </>

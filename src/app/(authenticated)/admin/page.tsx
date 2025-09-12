@@ -1,15 +1,14 @@
 'use client';
 
-import MasterQuestionTab from '@/app/components/admin/MasterQuestionTab';
-import TemplateTab from '@/app/components/admin/TemplateTab';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Tabs, Tab, Container } from 'react-bootstrap';
 import { Question, Template } from '../../../../types/formType';
+import TemplateTab from '@/app/components/admin/TemplateTab';
+import MasterQuestionTab from '@/app/components/admin/MasterQuestionTab';
 import BlockingOverlay from '@/app/components/BlockingOverlay';
 
-const PAGE_SIZE = 5;
 const useIsMobile = () => {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -72,10 +71,10 @@ export default function AdminPage() {
         <div className="mt-4">
           <Tabs activeKey={key} onSelect={(k) => setKey(k || 'questions')} className="mb-3">
             <Tab eventKey="questions" title="マスタ質問">
-              <MasterQuestionTab isMobile={isMobile} questions={questions} reload={fetchQuestions} pageSize={PAGE_SIZE} />
+              <MasterQuestionTab isMobile={isMobile} questions={questions} reload={fetchQuestions} />
             </Tab>
             <Tab eventKey="templates" title="テンプレート">
-              <TemplateTab isMobile={isMobile} templates={templates} reload={fetchTemplates} pageSize={PAGE_SIZE} />
+              <TemplateTab isMobile={isMobile} templates={templates} reload={fetchTemplates} />
             </Tab>
           </Tabs>
         </div>

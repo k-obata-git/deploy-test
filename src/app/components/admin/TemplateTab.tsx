@@ -1,21 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { Table, Button, Form, InputGroup, Pagination, Card, Alert } from 'react-bootstrap';
+import { Table, Button, Form, InputGroup, Card, Alert } from 'react-bootstrap';
 import { sortBy } from '../../../../lib/sort';
 import { Option, Template } from '../../../../types/formType';
+import { PAGINATION } from '../../../../constants/pagination';
 import EditTemplateModal from './EditTemplateModal';
 import ConfirmModal from '../ConfirmModal';
 import BlockingOverlay from '../BlockingOverlay';
+import Paginate from '../Paginate';
 
 interface Props {
   isMobile: boolean;
   templates: Template[];
   reload: () => void;
-  pageSize: number;
 }
 
-export default function TemplateTab({ isMobile, templates, reload, pageSize }: Props){
+export default function TemplateTab({ isMobile, templates, reload }: Props){
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -32,8 +33,8 @@ export default function TemplateTab({ isMobile, templates, reload, pageSize }: P
     t.title.toLowerCase().includes(search.toLowerCase())
   );
   const sorted = sortKey ? sortBy(filtered, sortKey, sortAsc) : filtered;
-  const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const pageCount = Math.ceil(sorted.length / pageSize);
+  const paginated = sorted.slice((currentPage - 1) * PAGINATION.ITEMS_PER_PAGE, currentPage * PAGINATION.ITEMS_PER_PAGE);
+  const pageCount = Math.ceil(sorted.length / PAGINATION.ITEMS_PER_PAGE);
 
   const handleSort = (key: "" | "title" | "description") => {
     if (sortKey === key) {
@@ -208,17 +209,10 @@ export default function TemplateTab({ isMobile, templates, reload, pageSize }: P
         </Table>
       )}
 
-      <Pagination className="d-flex justify-content-center">
-        {[...Array(pageCount)].map((_, idx) => (
-          <Pagination.Item
-            key={idx}
-            active={idx + 1 === currentPage}
-            onClick={() => setCurrentPage(idx + 1)}
-          >
-            {idx + 1}
-          </Pagination.Item>
-        ))}
-      </Pagination>
+      <div className="d-flex justify-content-center m-0">
+        <Paginate currentPage={currentPage} onPageChange={setCurrentPage} totalPages={pageCount}></Paginate>
+      </div>
+
       <ConfirmModal show={showModal} onClose={() => setShowModal(false)} onConfirm={() => onDelete()} itemName={selectedItem?.title} />
       <EditTemplateModal show={showEditModal} onHide={hideEditTemplateModal} template={selectedItem!} onSave={(updated) => onSave(updated)} />
     </>

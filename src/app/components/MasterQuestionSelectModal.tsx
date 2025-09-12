@@ -1,9 +1,13 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Modal, Button, Form, ListGroup } from 'react-bootstrap'
+import { Modal, Button, ListGroup, Row, Col } from 'react-bootstrap'
+import { BsFillCheckCircleFill } from 'react-icons/bs'
 import { Question } from '../../../types/formType'
+import { PAGINATION } from '../../../constants/pagination'
 import BlockingOverlay from './BlockingOverlay'
+import QuestionTypeIcon from './QuestionTypeIcon'
+import Paginate from './Paginate'
 
 type Props = {
   show: boolean
@@ -13,13 +17,18 @@ type Props = {
 
 export default function MasterQuestionSelectModal({ show, onClose, onSelect }: Props) {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [selectedId, setSelectedId] = useState<Number | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const paginated = questions?.slice((currentPage - 1) * PAGINATION.ITEMS_PER_PAGE, currentPage * PAGINATION.ITEMS_PER_PAGE);
+  const pageCount = Math.ceil(questions?.length / PAGINATION.ITEMS_PER_PAGE);
 
   useEffect(() => {
     if (show) {
-      setSelectedId(null);
+      setSelectedQuestion(null);
       setQuestions([]);
+      setCurrentPage(1);
 
       setLoading(true);
       fetch('/api/master-questions', {
@@ -37,11 +46,11 @@ export default function MasterQuestionSelectModal({ show, onClose, onSelect }: P
   }, [show])
 
   const handleAdd = () => {
-    const selected = questions.find(q => Number(q.id) === selectedId)
+    const selected = questions.find(q => Number(q.id) === selectedQuestion?.id);
     if (selected) {
-      onSelect(selected)
-      setSelectedId(null)
-      onClose()
+      onSelect(selected);
+      setSelectedQuestion(null);
+      onClose();
     }
   }
 
@@ -54,37 +63,39 @@ export default function MasterQuestionSelectModal({ show, onClose, onSelect }: P
       )}
       <Modal show={show} onHide={onClose} centered>
         <Modal.Header closeButton>
-          <Modal.Title>定型質問を追加</Modal.Title>
+          <Modal.Title>質問を選択</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <Form.Select
-            value={selectedId?.toString()}
-            onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
-            hidden={!questions}
-          >
-            <option value="">選択してください</option>
-            {questions?.map((q) => (
-              <option key={q.id} value={q.id}>
-                {q.label}（{q.type}）
-              </option>
-            ))}
-          </Form.Select>
+          <ListGroup>
+            {questions?.length === 0 ? (
+              <p className="text-center m-0">未登録</p>
+            ) : (
+              paginated?.map((q) => (
+                <ListGroup.Item key={q.id} onClick={() => setSelectedQuestion(q)} action>
+                  <Row>
+                    <Col xs={1} className="m-auto">
+                      <BsFillCheckCircleFill style={{opacity: selectedQuestion?.id === q.id ? "1" : "0"}} />
+                    </Col>
+                    <Col xs={11}>
+                      <div className="fw-bold text-truncate">{q.label}</div>
+                      <div className="d-flex align-items-center mb-2">
+                        <QuestionTypeIcon type={q.type} />
+                      </div>
+                    </Col>
+                  </Row>
+                </ListGroup.Item>
+              ))
+            )}
+          </ListGroup>
 
-          {selectedId && (
-            <div className="mt-3">
-              <strong>選択中:</strong>{' '}
-              {questions.find((q) => Number(q.id) === selectedId)?.label}
-              <ListGroup className="mt-2">
-                {(questions.find((q) => Number(q.id) === selectedId)?.options ?? []).map(opt => (
-                  <ListGroup.Item key={opt.id}>{opt.text}</ListGroup.Item>
-                ))}
-              </ListGroup>
-            </div>
-          )}
+          <div className="d-flex justify-content-center m-0 pt-3">
+            <Paginate currentPage={currentPage} onPageChange={setCurrentPage} totalPages={pageCount}></Paginate>
+          </div>
+
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={onClose}>閉じる</Button>
-          <Button variant="primary" onClick={handleAdd} disabled={!selectedId}>追加</Button>
+          <Button variant="primary" onClick={handleAdd} disabled={!selectedQuestion}>追加</Button>
         </Modal.Footer>
       </Modal>
     </>

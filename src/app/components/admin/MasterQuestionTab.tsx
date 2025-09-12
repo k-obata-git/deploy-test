@@ -1,22 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { Table, Button, Form, InputGroup, Pagination, Card, Alert } from 'react-bootstrap';
-import { BsCardList, BsCheckSquare, BsFileFont, BsQuestionCircle, BsUiRadios } from 'react-icons/bs';
+import { Table, Button, Form, InputGroup, Card, Alert } from 'react-bootstrap';
 import { sortBy } from '../../../../lib/sort';
 import { Question } from '../../../../types/formType';
+import { PAGINATION } from '../../../../constants/pagination';
 import EditQuestionModal from './EditQuestionModal';
 import ConfirmModal from '../ConfirmModal';
 import BlockingOverlay from '../BlockingOverlay';
+import QuestionTypeIcon from '../QuestionTypeIcon';
+import Paginate from '../Paginate';
 
 interface Props {
   isMobile: boolean;
   questions: Question[];
   reload: () => void;
-  pageSize: number;
 }
 
-export default function MasterQuestionTab({ isMobile, questions, reload, pageSize }: Props){
+export default function MasterQuestionTab({ isMobile, questions, reload }: Props){
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -33,23 +34,8 @@ export default function MasterQuestionTab({ isMobile, questions, reload, pageSiz
     q.label.toLowerCase().includes(search.toLowerCase())
   );
   const sorted = sortKey ? sortBy(filtered, sortKey, sortAsc) : filtered;
-  const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const pageCount = Math.ceil(sorted.length / pageSize);
-
-  const getIconByType = (type: string) => {
-    switch (type) {
-      case 'text':
-        return <span><BsFileFont />テキスト</span>;
-      case 'radio':
-        return <span><BsUiRadios />ラジオ</span>;
-      case 'checkbox':
-        return <span><BsCheckSquare />チェックボックス</span>;
-      case 'select':
-        return <span><BsCardList />セレクトボックス</span>;
-      default:
-        return <BsQuestionCircle />;
-    }
-  };
+  const paginated = sorted.slice((currentPage - 1) * PAGINATION.ITEMS_PER_PAGE, currentPage * PAGINATION.ITEMS_PER_PAGE);
+  const pageCount = Math.ceil(sorted.length / PAGINATION.ITEMS_PER_PAGE);
 
   const handleSort = (key: "label" | "type") => {
     if (sortKey === key) {
@@ -182,7 +168,7 @@ export default function MasterQuestionTab({ isMobile, questions, reload, pageSiz
                   <Card.Title className="mb-0 text-truncate">{q.label}</Card.Title>
                 </div>
                 <div className="d-flex align-items-center mb-2">
-                  {getIconByType(q.type)}
+                  <QuestionTypeIcon type={q.type} />
                 </div>
                 <div className="d-flex justify-content-end">
                   <Button variant="warning" size="sm" className="me-2" onClick={() => editMasterQuestion(q.id)}>編集</Button>
@@ -220,17 +206,10 @@ export default function MasterQuestionTab({ isMobile, questions, reload, pageSiz
         </Table>
       )}
 
-      <Pagination className="d-flex justify-content-center">
-        {[...Array(pageCount)].map((_, idx) => (
-          <Pagination.Item
-            key={idx}
-            active={idx + 1 === currentPage}
-            onClick={() => setCurrentPage(idx + 1)}
-          >
-            {idx + 1}
-          </Pagination.Item>
-        ))}
-      </Pagination>
+      <div className="d-flex justify-content-center m-0">
+        <Paginate currentPage={currentPage} onPageChange={setCurrentPage} totalPages={pageCount}></Paginate>
+      </div>
+
       <ConfirmModal show={showModal} onClose={() => setShowModal(false)} onConfirm={() => onDelete()} itemName={selectedItem?.label} />
       <EditQuestionModal show={showEditModal} onHide={hideEditQuestionModal} question={selectedItem!} onSave={(updated) => onSave(updated)} />
     </>
